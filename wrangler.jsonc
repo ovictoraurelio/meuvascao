@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "meuvascao",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  // Data limitada pelo workerd embutido no @cloudflare/vitest-pool-workers (1.20260815). Ao subir a
+  // data aqui, suba também em tests/workers/wrangler.test.jsonc e confirme que o pool a aceita.
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  // Ambiente padrão: desenvolvimento local. Bindings e vars não são herdados pelos envs abaixo;
+  // por isso cada ambiente redeclara o que precisa.
+  "vars": {
+    "ENVIRONMENT": "development",
+    "SITE_URL": "http://localhost:4321",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "meuvascao-dev",
+      "database_id": "00000000-0000-4000-8000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "env": {
+    "preview": {
+      "vars": {
+        "ENVIRONMENT": "preview",
+        "SITE_URL": "https://preview.meuvascao.com",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "meuvascao-preview",
+          "database_id": "SUBSTITUIR_APOS_wrangler_d1_create",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production",
+        "SITE_URL": "https://meuvascao.com",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "meuvascao-prod",
+          "database_id": "SUBSTITUIR_APOS_wrangler_d1_create",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+  },
+}

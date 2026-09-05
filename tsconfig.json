@@ -1,0 +1,20 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "types": ["@cloudflare/vitest-pool-workers/types"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": [
+    "dist",
+    "node_modules",
+    "prototype",
+    ".wrangler",
+    ".dry-run",
+    "playwright-report",
+    "test-results",
+    "coverage"
+  ]
+}
