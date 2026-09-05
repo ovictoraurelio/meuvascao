@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="Protótipo demonstrativo do Meu Vascão, portal independente feito por torcedores do Vasco."
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111111" />
+    <title>Meu Vascão — Aqui é Vasco.</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="topline">
+      <span>FEITO PELA TORCIDA. VIVIDO PELA TORCIDA.</span
+      ><span>O sentimento não pode parar. <b>✠</b></span>
+    </div>
+    <header>
+      <a class="brand" href="#" aria-label="Meu Vascão, início"
+        ><span class="brand-cross">✠</span
+        ><span
+          >MEU<span class="brand-bottom"
+            >VASCÃO<span class="red">.</span></span
+          ></span
+        ></a
+      >
+      <nav id="main-nav" aria-label="Navegação principal">
+        <a class="active" href="#" data-page="home">Início</a
+        ><a href="#noticias" data-page="news">Notícias</a
+        ><a href="#jogos" data-page="games">Jogos</a
+        ><a href="#resenha" data-page="forum"
+          >Resenha da torcida <span class="live-dot"></span
+        ></a>
+      </nav>
+      <button class="join" id="join">Entrar pra torcida <span>↗</span></button
+      ><button
+        class="mobile-menu"
+        aria-label="Menu principal"
+        aria-controls="main-nav"
+        aria-expanded="false"
+      >
+        ☰
+      </button>
+    </header>
+    <main>
+      <section class="welcome">
+        <div>
+          <div class="eyebrow">NOSSO TIME. NOSSA CASA.</div>
+          <h1>Aqui é Vasco<span class="red">.</span> E ponto.</h1>
+          <p>O dia a dia do Gigante, com a voz de quem nunca abandona.</p>
+        </div>
+        <span class="community"
+          ><span class="avatar-stack"><i>R</i><i>M</i><i>J</i></span
+          ><span
+            ><b>A nossa força vem da arquibancada</b
+            ><small>Uma só torcida. Milhões de histórias.</small></span
+          ></span
+        >
+      </section>
+      <div class="demo-label">
+        VERSÃO DEMONSTRATIVA <span>Conteúdo e partidas ilustrativos</span>
+      </div>
+      <div class="main-grid">
+        <div class="main-column">
+          <section class="hero" aria-label="Notícia em destaque">
+            <img
+              src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1600&q=85"
+              alt="Arquibancada de um estádio de futebol iluminado à noite"
+            />
+            <div class="hero-shade"></div>
+            <div class="hero-top">
+              <span class="tag">A VOZ DA ARQUIBANCADA</span
+              ><span class="hero-count">01 <span>/ 03</span></span>
+            </div>
+            <div class="hero-content">
+              <span class="overline">O CALDEIRÃO VAI FERVER</span>
+              <h2>Tem coisa que só<br />São Januário explica.</h2>
+              <p>
+                Não é só sobre futebol. É sobre pertencer.<br />A nossa casa, a
+                nossa história, a nossa gente.
+              </p>
+              <div class="hero-bottom">
+                <button class="story-link" data-story="0">
+                  Sentir essa história <span>↗</span>
+                </button>
+                <div class="slider-dots">
+                  <button
+                    class="selected"
+                    aria-label="Destaque 1"
+                    data-slide="0"
+                  ></button
+                  ><button aria-label="Destaque 2" data-slide="1"></button
+                  ><button aria-label="Destaque 3" data-slide="2"></button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section id="noticias" class="news-section">
+            <div class="section-heading">
+              <h2><span class="red">/</span> No radar do Gigante</h2>
+              <button class="text-button" id="all-news">
+                Todas as notícias ↗
+              </button>
+            </div>
+            <div class="filters" aria-label="Filtrar notícias">
+              <button class="selected" data-filter="Todas">Todas</button
+              ><button data-filter="Futebol">Futebol</button
+              ><button data-filter="Bastidores">Bastidores</button
+              ><button data-filter="Torcida">Torcida</button
+              ><button data-filter="Base">Base</button
+              ><button data-filter="Outros esportes">Outros esportes</button>
+            </div>
+            <div id="news-grid" class="news-grid"></div>
+          </section>
+        </div>
+        <aside>
+          <section id="jogos" class="match-card">
+            <div class="card-heading">
+              <span><i class="live-dot"></i> PRÓXIMA BATALHA</span
+              ><span class="pill">EM CASA</span>
+            </div>
+            <div class="competition">
+              BRASILEIRÃO <span>• RODADA ILUSTRATIVA</span>
+            </div>
+            <div class="teams">
+              <div><span class="vasco-crest">✠</span><b>VASCO</b></div>
+              <div class="versus">×</div>
+              <div>
+                <span class="opponent-crest">S<span>F</span>C</span
+                ><b>SANTOS</b>
+              </div>
+            </div>
+            <div class="match-date">Domingo <span>•</span> 18h30</div>
+            <div class="location">⌖ São Januário, Rio de Janeiro</div>
+            <button class="primary" id="match-center">
+              Bora pro pré-jogo <span>→</span>
+            </button>
+            <div class="match-footer">
+              Aqui a torcida joga junto. <span>✠</span>
+            </div>
+          </section>
+          <section class="poll-card">
+            <div class="mini-label">FALA, VASCAÍNO <span>↗</span></div>
+            <h3>Qual é o seu palpite<br />pra próxima batalha?</h3>
+            <p>O otimismo por aqui tem camisa.</p>
+            <div id="poll-options">
+              <button data-vote="0">✠ Dá Vasco, é claro! <span>○</span></button
+              ><button data-vote="1">Vai ser empate <span>○</span></button
+              ><button data-vote="2">Hoje tá difícil... <span>○</span></button>
+            </div>
+            <small id="poll-note">Escolha seu palpite e veja o da galera</small>
+          </section>
+          <section class="manifesto">
+            <span class="red">✠</span>
+            <h3>Não é uma fase.<br />É a nossa vida.</h3>
+            <p>Um portal independente.<br />Uma paixão que não se explica.</p>
+            <span class="manifesto-line"></span><b>DE VASCAÍNO PRA VASCAÍNO.</b>
+          </section>
+        </aside>
+      </div>
+      <section id="resenha" class="forum-section">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">A ARQUIBANCADA É AQUI</div>
+            <h2>Chega mais pra resenha<span class="red">.</span></h2>
+          </div>
+          <button class="join" id="new-topic">Puxar uma resenha +</button>
+        </div>
+        <div class="forum-grid" id="forum-grid"></div>
+      </section>
+      <section class="newsletter">
+        <div class="newsletter-cross">✠</div>
+        <div>
+          <div class="eyebrow">
+            O VASCO NÃO SAI DA CABEÇA. NEM DO SEU RADAR.
+          </div>
+          <h2>Seu giro pelo Gigante começa aqui.</h2>
+          <p>Salve o portal nos favoritos e volte pra próxima resenha.</p>
+        </div>
+        <a href="#noticias">Ficar por dentro ↗</a>
+      </section>
+    </main>
+    <footer>
+      <a class="footer-brand" href="#"
+        >✠ MEU VASCÃO<span class="red">.</span></a
+      >
+      <p>Feito por fãs. Movido por um amor infinito.</p>
+      <small
+        >Portal independente, sem vínculo oficial com o Club de Regatas Vasco da
+        Gama.</small
+      >
+    </footer>
+    <dialog id="modal">
+      <button id="close-modal" aria-label="Fechar janela">×</button>
+      <div id="modal-content"></div>
+    </dialog>
+    <div id="toast" role="status"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

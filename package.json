@@ -1,0 +1,19 @@
+{
+  "name": "meu-vascao",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "python3 -m http.server 5173 --bind 127.0.0.1",
+    "start": "npm run dev",
+    "check": "node --check app.js && prettier --check .",
+    "format": "prettier --write .",
+    "test": "playwright test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "prettier": "3.9.6"
+  }
+}
