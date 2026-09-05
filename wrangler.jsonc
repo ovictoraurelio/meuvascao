@@ -29,8 +29,13 @@
   ],
   "env": {
     "preview": {
+      // Worker meuvascao-preview em workers.dev; versões por PR ganham alias `pr-<n>` (deploy.yml).
+      "workers_dev": true,
+      "preview_urls": true,
       "vars": {
         "ENVIRONMENT": "preview",
+        // Ajustar para a URL real do preview (workers.dev da conta ou um subdomínio próprio)
+        // quando ela existir; só passa a ser usada em canonical/OG a partir da fatia F8.
         "SITE_URL": "https://preview.meuvascao.com",
       },
       "d1_databases": [
@@ -43,6 +48,9 @@
       ],
     },
     "production": {
+      // Só pelo domínio próprio (a zona precisa estar na Cloudflare); nada em workers.dev.
+      "workers_dev": false,
+      "routes": [{ "pattern": "meuvascao.com", "custom_domain": true }],
       "vars": {
         "ENVIRONMENT": "production",
         "SITE_URL": "https://meuvascao.com",

@@ -1,0 +1,152 @@
+name: Entrega contínua
+
+# Três caminhos, um por ambiente:
+# - pull_request: publica uma VERSÃO no Worker de preview com alias `pr-<n>` e comenta a URL no PR.
+#   Não muda a URL principal do preview. Só para branches deste repositório (forks não têm segredos).
+#   Sem os segredos configurados, termina com aviso e não publica nada.
+# - push em main: deploy do Worker de preview; o preview passa a refletir main.
+# - workflow_dispatch: deploy em PRODUÇÃO, sempre manual, dentro do Environment `production`
+#   (revisor obrigatório, conferido pela API antes de publicar). Nenhum push publica em produção.
+# Autenticação por CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (segredos do repositório).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Digite "producao" para publicar em produção'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: entrega-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  preview-pr:
+    name: Preview do PR
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: preview
+      url: ${{ steps.publicar.outputs.url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verificar segredos
+        id: segredos
+        run: sh scripts/ci/require-cloudflare-secrets.sh
+      - name: Build do ambiente preview
+        if: steps.segredos.outputs.configured == 'true'
+        run: npm run build:preview
+      - name: Validar configuração gerada
+        if: steps.segredos.outputs.configured == 'true'
+        run: node scripts/ci/check-generated-config.mjs preview
+      - name: Aplicar migrações no D1 de preview
+        if: steps.segredos.outputs.configured == 'true'
+        run: npx wrangler d1 migrations apply meuvascao-preview --env preview --remote
+      - name: Publicar versão de preview
+        id: publicar
+        if: steps.segredos.outputs.configured == 'true'
+        run: sh scripts/ci/publish-preview-version.sh "pr-${{ github.event.pull_request.number }}" "${{ github.sha }}"
+      - name: Comentar URL no PR
+        if: steps.segredos.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh scripts/ci/comment-preview-url.sh "${{ github.event.pull_request.number }}" "${{ steps.publicar.outputs.url }}" "${{ github.sha }}"
+      - name: Sonda do preview publicado
+        if: steps.segredos.outputs.configured == 'true'
+        run: sh scripts/ci/smoke.sh "${{ steps.publicar.outputs.url }}" preview
+
+  preview-main:
+    name: Preview acompanha main
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verificar segredos
+        id: segredos
+        run: sh scripts/ci/require-cloudflare-secrets.sh
+      - name: Build do ambiente preview
+        if: steps.segredos.outputs.configured == 'true'
+        run: npm run build:preview
+      - name: Validar configuração gerada
+        if: steps.segredos.outputs.configured == 'true'
+        run: node scripts/ci/check-generated-config.mjs preview
+      - name: Aplicar migrações no D1 de preview
+        if: steps.segredos.outputs.configured == 'true'
+        run: npx wrangler d1 migrations apply meuvascao-preview --env preview --remote
+      - name: Deploy do Worker de preview
+        id: deploy
+        if: steps.segredos.outputs.configured == 'true'
+        run: sh scripts/ci/deploy-worker.sh preview
+      - name: Sonda do preview publicado
+        if: steps.segredos.outputs.configured == 'true'
+        run: sh scripts/ci/smoke.sh "${{ steps.deploy.outputs.url }}" preview
+
+  producao:
+    name: Produção (manual, com aprovação)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://meuvascao.com
+    steps:
+      - name: Exigir confirmação explícita
+        if: inputs.confirmar != 'producao'
+        run: |
+          echo "::error::Para publicar em produção, dispare o workflow com o campo confirmar = producao."
+          exit 1
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Exigir revisor obrigatório no Environment production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh scripts/ci/require-production-reviewers.sh
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Verificar segredos
+        run: sh scripts/ci/require-cloudflare-secrets.sh --strict
+      - name: Build do ambiente de produção
+        run: npm run build:production
+      - name: Validar configuração gerada
+        run: node scripts/ci/check-generated-config.mjs production
+      - name: Aplicar migrações no D1 de produção
+        run: npx wrangler d1 migrations apply meuvascao-prod --env production --remote
+      - name: Deploy do Worker de produção
+        id: deploy
+        run: sh scripts/ci/deploy-worker.sh production
+      - name: Sonda da produção publicada
+        run: sh scripts/ci/smoke.sh "https://meuvascao.com" production
+      - name: Como reverter
+        if: failure()
+        run: |
+          echo "::warning::Deploy ou sonda falharam. Para voltar à versão anterior: npx wrangler rollback --env production (ver docs/runbooks/deploy.md, seção Rollback). Migrações não são desfeitas automaticamente."

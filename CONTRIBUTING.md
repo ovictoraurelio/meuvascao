@@ -31,6 +31,10 @@ Node 22 (22.12 ou superior, ver `.nvmrc`), npm 10 ou superior e um shell POSIX (
 - **compatibility_date**: fixada em 2026-08-15 em `wrangler.jsonc` e em `tests/workers/wrangler.test.jsonc` porque o workerd embutido no `@cloudflare/vitest-pool-workers` não aceita datas posteriores. Suba as duas juntas.
 - **Actions por SHA**: além do gate local (`scripts/check-actions-pinned.mjs`), o fundador pode ativar no GitHub a política "Require actions to be pinned to a full-length commit SHA" (Settings → Actions), que recusa workflows não fixados na execução.
 
+## Entrega contínua
+
+`.github/workflows/deploy.yml`: PR publica uma versão de preview com URL própria e comenta no PR; push em `main` faz o deploy do Worker de preview; produção só por `workflow_dispatch` com confirmação e aprovação no Environment `production`. Configuração inicial (token, D1, segredos, Environments), fluxo, rollback e diagnóstico em [docs/runbooks/deploy.md](docs/runbooks/deploy.md). A CI valida o bundle com `wrangler deploy --dry-run` em todo PR; `tests/unit/deploy-policy.test.ts` trava a regra "produção nunca por push".
+
 ## Matriz de versões (verificada em 05/09/2026)
 
 Astro 7.3.1 · @astrojs/cloudflare 14.3.0 (exige Astro ≥ 7.2 e wrangler ≥ 4.125) · wrangler 4.129.0 · TypeScript 5.9.3 (o `@astrojs/check` aceita 5.x/6.x) · Vitest 4.1.11 (o `@cloudflare/vitest-pool-workers` 0.22 exige Vitest ^4.1 e traz workerd 1.20260815) · Playwright 1.63.0 · ESLint 10 (o `eslint-plugin-astro` 3 exige ≥ 10) · Stylelint 17 + postcss-html 2 · Drizzle ORM 0.45.2 / drizzle-kit 0.31.10. Atualizações via Dependabot, agrupadas.
