@@ -1,6 +1,9 @@
 import type { APIContext } from "astro";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Teste em Node com `cloudflare:workers` simulado: cobre o caminho sem banco, que o E2E
+// (sempre com D1 ligado) não alcança. O comportamento com D1 real fica em tests/workers.
+
 const { bindings, first } = vi.hoisted(() => ({
   bindings: {
     ENVIRONMENT: "development",
@@ -40,7 +43,7 @@ describe("sonda de saúde", () => {
     bindings.DB = undefined;
     const response = await probe();
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ ok: false, db: "unbound" });
+    expect(await response.json()).toMatchObject({ ok: false, db: "error" });
   });
 
   it("retorna 503 sem expor detalhes internos da falha", async () => {

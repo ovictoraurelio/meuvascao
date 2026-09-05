@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import {
   cloudflareTest,
   readD1Migrations,
@@ -11,8 +13,10 @@ export default defineConfig(async () => {
     test: {
       projects: [
         {
+          // O alias @/ espelha tsconfig.json para módulos importados pelos testes de Node.
+          // fileURLToPath evita caminhos percent-encoded (espaços, acentos) e funciona no Windows.
           resolve: {
-            alias: { "@": new URL("./src", import.meta.url).pathname },
+            alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
           },
           test: {
             name: "unit",
@@ -21,10 +25,10 @@ export default defineConfig(async () => {
           },
         },
         {
-          // Testes em workerd com D1 real e isolado por arquivo de teste.
+          // Testes em workerd com D1 real e isolado por arquivo de teste. Sem `main`: os testes
+          // exercitam bindings e repositórios, não um Worker de entrada.
           plugins: [
             cloudflareTest({
-              main: "./tests/workers/stub-worker.ts",
               wrangler: { configPath: "./tests/workers/wrangler.test.jsonc" },
               miniflare: {
                 bindings: { TEST_MIGRATIONS: migrations },

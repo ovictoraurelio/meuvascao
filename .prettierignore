@@ -1,13 +1,4 @@
-node_modules/
+# O Prettier já honra o .gitignore; aqui só o que é versionado e não deve ser formatado.
 package-lock.json
-dist/
-.astro/
-.wrangler/
-.dry-run/
-worker-configuration.d.ts
 migrations/
 prototype/
-test-results/
-playwright-report/
-.lighthouseci/
-backups/

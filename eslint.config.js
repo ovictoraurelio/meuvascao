@@ -4,6 +4,7 @@ import astro from "eslint-plugin-astro";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+// Nenhum HTML montado por string em lugar nenhum: nós são criados com createElement/textContent.
 const forbiddenHtmlSinks = [
   {
     selector: "MemberExpression[property.name='innerHTML']",
@@ -17,6 +18,10 @@ const forbiddenHtmlSinks = [
     selector: "CallExpression[callee.property.name='insertAdjacentHTML']",
     message:
       "insertAdjacentHTML é proibido: use insertAdjacentElement/textContent.",
+  },
+  {
+    selector: "CallExpression[callee.property.name='setHTMLUnsafe']",
+    message: "setHTMLUnsafe é proibido.",
   },
   {
     selector:
@@ -36,6 +41,9 @@ export default defineConfig([
     "worker-configuration.d.ts",
     "test-results/",
     "playwright-report/",
+    "coverage/",
+    ".lighthouseci/",
+    "backups/",
     "migrations/",
   ]),
   js.configs.recommended,
@@ -43,14 +51,36 @@ export default defineConfig([
   ...tseslint.configs.stylistic,
   ...astro.configs.recommended,
   {
-    files: ["**/*.{ts,mts,js,mjs}"],
+    // Ferramentas, configurações e testes de Node.
+    files: [
+      "scripts/**/*.{js,mjs}",
+      "*.config.{js,mjs,ts}",
+      "tests/unit/**/*.ts",
+      "tests/e2e/**/*.ts",
+      "tests/gates/**/*.ts",
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    // Ilhas rodam no navegador e nunca injetam HTML.
+    // Código do Worker roda na plataforma web (fetch, Response, crypto), não em Node.
+    files: ["src/**/*.ts", "tests/workers/**/*.ts"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+  {
+    // Ilhas rodam no navegador.
     files: ["src/islands/**/*.ts"],
     languageOptions: { globals: { ...globals.browser } },
+  },
+  {
+    // Sinks de HTML proibidos em todo o código do app, inclusive nos <script> de arquivos .astro
+    // (o plugin do Astro os expõe como arquivos virtuais *.astro/*.ts).
+    files: ["src/**/*.{ts,mts,js,mjs}", "src/**/*.astro/*.ts"],
     rules: { "no-restricted-syntax": ["error", ...forbiddenHtmlSinks] },
+  },
+  {
+    // set:html só com justificativa explícita (eslint-disable com motivo), nunca por padrão.
+    files: ["**/*.astro"],
+    rules: { "astro/no-set-html-directive": "error" },
   },
   {
     // Apresentação não acessa domínio nem banco.

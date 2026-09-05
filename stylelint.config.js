@@ -26,6 +26,11 @@ export default {
   },
   overrides: [
     {
+      // Blocos <style> dentro de componentes .astro passam pelas mesmas regras.
+      files: ["**/*.astro"],
+      customSyntax: "postcss-html",
+    },
+    {
       files: ["src/styles/tokens.css"],
       rules: {
         "color-no-hex": null,

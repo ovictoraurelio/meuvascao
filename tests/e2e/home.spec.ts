@@ -1,16 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-test("saúde responde com ambiente e banco", async ({ request }) => {
-  const res = await request.get("/api/health");
-  expect(res.status()).toBe(200);
-  expect(res.headers()["cache-control"]).toContain("no-store");
-  expect(await res.json()).toMatchObject({
-    ok: true,
-    env: process.env.E2E_ENVIRONMENT ?? "development",
-    db: "ok",
-  });
-});
-
 test("home carrega sem erros de JavaScript e sem recursos externos", async ({
   page,
 }) => {

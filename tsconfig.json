@@ -2,15 +2,19 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
-    "types": [
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers/types"
-    ],
-    "baseUrl": ".",
+    "types": ["@cloudflare/vitest-pool-workers/types"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [".astro/types.d.ts", "**/*", "./worker-configuration.d.ts"],
-  "exclude": ["dist", "node_modules", "prototype", ".wrangler", ".dry-run"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "prototype",
+    ".wrangler",
+    ".dry-run",
+    "playwright-report",
+    "test-results",
+    "coverage"
+  ]
 }

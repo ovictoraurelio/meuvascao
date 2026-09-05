@@ -1,8 +1,10 @@
 {
-  // Configuração mínima para os testes em workerd: só o que os repositórios precisam.
+  // Configuração mínima para os testes em workerd. É separada do wrangler.jsonc da raiz porque
+  // `main` e `assets` são chaves herdadas: apontar para a raiz puxaria o entrypoint do adaptador
+  // e o diretório dist/. Mantenha compatibility_date e compatibility_flags iguais aos da raiz.
   "name": "meuvascao-tests",
-  "compatibility_date": "2026-08-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "vars": {
     "ENVIRONMENT": "development",
     "SITE_URL": "http://localhost:4321",
@@ -12,7 +14,7 @@
       "binding": "DB",
       "database_name": "meuvascao-test",
       "database_id": "meuvascao-test",
-      "migrations_dir": "migrations",
+      "migrations_dir": "../../migrations",
     },
   ],
 }
