@@ -10,11 +10,12 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancela só execuções de PR superadas; todo push em main termina com veredito.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verificar:
-    name: Tipos, lint, gates e testes unitários
+    name: Tipos, lint, gates e testes em Node e workerd
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -25,9 +26,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npm run test:unit
-      - run: npm run test:workers
-      - run: npm audit --audit-level=high
+      - run: npm run test:vitest
 
   navegador:
     name: Build e testes de navegador
@@ -40,10 +39,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run test:e2e
-        env:
-          CI: "true"
       - if: failure()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:

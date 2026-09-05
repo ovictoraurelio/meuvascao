@@ -2,7 +2,9 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "meuvascao",
   "main": "@astrojs/cloudflare/entrypoints/server",
-  "compatibility_date": "2026-09-03",
+  // Data limitada pelo workerd embutido no @cloudflare/vitest-pool-workers (1.20260815). Ao subir a
+  // data aqui, suba também em tests/workers/wrangler.test.jsonc e confirme que o pool a aceita.
+  "compatibility_date": "2026-08-15",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": "./dist",

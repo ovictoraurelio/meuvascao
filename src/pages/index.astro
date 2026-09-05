@@ -3,6 +3,7 @@
 import { getEnv } from "@/lib/env";
 
 const { ENVIRONMENT } = getEnv();
+const indexable = ENVIRONMENT === "production";
 ---
 
 <!doctype html>
@@ -15,6 +16,7 @@ const { ENVIRONMENT } = getEnv();
       name="description"
       content="Portal independente de torcedores do Vasco: dia de jogo, resenha e links curados."
     />
+    {!indexable && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
@@ -26,7 +28,7 @@ const { ENVIRONMENT } = getEnv();
       </p>
       <p>Em construção. Ainda não há jogos, notícias ou resenha cadastrados.</p>
       {
-        ENVIRONMENT !== "production" && (
+        !indexable && (
           <p>Ambiente: {ENVIRONMENT}. Esta página não é indexada.</p>
         )
       }

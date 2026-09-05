@@ -17,6 +17,9 @@ dist/
 .dry-run/
 worker-configuration.d.ts
 
+# caches de ferramentas
+.eslintcache
+
 # testes e relatórios
 coverage/
 test-results/
