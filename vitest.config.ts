@@ -11,6 +11,9 @@ export default defineConfig(async () => {
     test: {
       projects: [
         {
+          resolve: {
+            alias: { "@": new URL("./src", import.meta.url).pathname },
+          },
           test: {
             name: "unit",
             include: ["tests/unit/**/*.test.ts"],

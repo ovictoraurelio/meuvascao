@@ -1,18 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 // Fora de produção (desenvolvimento e preview) nenhuma resposta pode ser indexada.
-test("respostas fora de produção trazem X-Robots-Tag noindex", async ({
-  request,
-}) => {
-  const health = await request.get("/api/health");
-  const { env } = (await health.json()) as { env: string };
-  test.skip(env === "production", "em produção o índice é permitido");
+test("indexação respeita o ambiente configurado", async ({ request }) => {
+  const environment = process.env.E2E_ENVIRONMENT ?? "development";
 
   for (const path of ["/", "/api/health"]) {
     const res = await request.get(path);
-    expect(res.headers()["x-robots-tag"], `${path} sem noindex`).toContain(
-      "noindex",
-    );
+    if (environment === "production") {
+      expect(res.headers()["x-robots-tag"]).toBeUndefined();
+    } else {
+      expect(res.headers()["x-robots-tag"], `${path} sem noindex`).toContain(
+        "noindex",
+      );
+    }
   }
 });
 

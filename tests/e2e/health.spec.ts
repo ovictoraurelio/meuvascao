@@ -6,7 +6,7 @@ test("saúde responde com ambiente e banco", async ({ request }) => {
   expect(res.headers()["cache-control"]).toContain("no-store");
   expect(await res.json()).toMatchObject({
     ok: true,
-    env: "development",
+    env: process.env.E2E_ENVIRONMENT ?? "development",
     db: "ok",
   });
 });
