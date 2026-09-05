@@ -1,0 +1,10 @@
+# Copie para .dev.vars (ignorado pelo Git). Valores locais apenas.
+# Segredo da assinatura de sessão (fatia F6). Gere com: openssl rand -base64 48
+SESSION_SECRET=troque-este-valor-localmente
+# Provedor de e-mail do link mágico (fatia F6). Vazio = caixa de e-mail de desenvolvimento em /dev/mailbox
+RESEND_API_KEY=
+# Turnstile (fatia F4). Vazio = chaves de teste públicas da Cloudflare
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+# Observabilidade (fatia F11). Vazio = desligado
+SENTRY_DSN=

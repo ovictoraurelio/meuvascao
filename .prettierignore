@@ -1,5 +1,13 @@
 node_modules/
 package-lock.json
 dist/
+.astro/
+.wrangler/
+.dry-run/
+worker-configuration.d.ts
+migrations/
+prototype/
 test-results/
 playwright-report/
+.lighthouseci/
+backups/

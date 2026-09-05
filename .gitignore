@@ -1,12 +1,28 @@
 node_modules/
 .DS_Store
+.idea/
+
+# ambiente e segredos
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# build e artefatos gerados
 dist/
 .astro/
 .wrangler/
+.dry-run/
+worker-configuration.d.ts
+
+# testes e relatórios
 coverage/
 test-results/
 playwright-report/
+.lighthouseci/
+
+# operação
+backups/
 *.log

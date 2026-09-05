@@ -1,19 +1,63 @@
 {
   "name": "meu-vascao",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.0",
   "private": true,
-  "scripts": {
-    "dev": "python3 -m http.server 5173 --bind 127.0.0.1",
-    "start": "npm run dev",
-    "check": "node --check app.js && prettier --check .",
-    "format": "prettier --write .",
-    "test": "playwright test"
-  },
+  "type": "module",
+  "description": "Portal independente de torcedores do Vasco: dia de jogo, resenha e links curados.",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "postinstall": "wrangler types --include-runtime=false",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro build && wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state --port 8788",
+    "check": "npm run check:actions && npm run check:html && npm run check:format && npm run check:lint && npm run check:types",
+    "check:types": "astro check",
+    "check:lint": "eslint . && stylelint \"src/**/*.css\" --allow-empty-input",
+    "check:format": "prettier --check .",
+    "check:actions": "node scripts/check-actions-pinned.mjs",
+    "check:html": "sh scripts/check-forbidden-html.sh",
+    "format": "prettier --write .",
+    "types": "wrangler types --include-runtime=false",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
+    "db:reset": "sh scripts/db-reset-local.sh",
+    "test": "npm run test:unit && npm run test:workers && npm run test:e2e",
+    "test:unit": "vitest run --project unit",
+    "test:workers": "vitest run --project workers",
+    "test:e2e": "astro build && playwright test"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "14.3.0",
+    "astro": "7.3.1",
+    "drizzle-orm": "0.45.2",
+    "zod": "4.5.4"
   },
   "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@axe-core/playwright": "4.13.0",
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@cloudflare/workers-types": "5.20260905.1",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
-    "prettier": "3.9.6"
+    "@types/node": "22.20.1",
+    "drizzle-kit": "0.31.10",
+    "eslint": "10.10.0",
+    "eslint-plugin-astro": "3.1.0",
+    "globals": "17.12.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-astro": "0.14.1",
+    "stylelint": "17.15.0",
+    "stylelint-config-standard": "40.0.0",
+    "stylelint-declaration-strict-value": "1.12.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11",
+    "wrangler": "4.129.0"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "workerd": true
   }
 }
