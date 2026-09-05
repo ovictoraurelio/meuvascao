@@ -8,7 +8,7 @@ Estado: **v1 em construção** (fatia F0, fundação). O protótipo 0.1.0 está 
 
 ## Stack
 
-Astro 7 (SSR) + TypeScript em Cloudflare Workers, banco D1 via Drizzle ORM (Postgres em São Paulo como alternativa a decidir por spike de latência), CSS com tokens gerados de `design/tokens.json`, Vitest (unit e workers) e Playwright (E2E, acessibilidade e gates de estilo). Decisões em `docs/03-arquitetura.md`, plano e revisão em `docs/06-revisao-personas.md`, regras de trabalho em `CLAUDE.md`.
+Astro 7 (SSR) + TypeScript em Cloudflare Workers, binding D1 e configuração do Drizzle ORM, Vitest (unit e workers) e Playwright (E2E). A F0 entrega a home mínima, a sonda de saúde e gates de tipos, lint, HTML e cabeçalhos. Esquema de domínio, tokens em `design/tokens.json`, layout, auditorias de acessibilidade e desempenho entram nas próximas fatias. Postgres em São Paulo segue como alternativa a decidir por spike de latência. Decisões em `docs/03-arquitetura.md`, plano e revisão em `docs/06-revisao-personas.md`, regras de trabalho em `CLAUDE.md`.
 
 ## Executar localmente
 
@@ -31,6 +31,8 @@ npm test
 ```
 
 `npm run check` roda os gates estáticos (actions por SHA, HTML proibido, Prettier, ESLint, Stylelint, `astro check`). `npm test` roda os testes unitários, os testes em workerd com D1 real e os testes de navegador contra o build servido pelo wrangler na porta 8788. `npm run preview` serve o build da mesma forma para inspeção manual. Para alterar dependências use `npx npm@11 install` (ver `CONTRIBUTING.md`).
+
+Após o build, os ambientes também podem ser verificados localmente com `E2E_ENVIRONMENT=preview CI=true npx playwright test` e `E2E_ENVIRONMENT=production CI=true npx playwright test`. Isso altera a variável do Worker local; não faz deploy nem acessa o banco remoto. A sonda `/api/health` retorna 503 quando o banco falha ou seu binding está ausente.
 
 ## Documentação
 

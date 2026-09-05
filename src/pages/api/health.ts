@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ locals }) => {
     }
   }
 
-  const ok = db !== "error";
+  const ok = db === "ok";
   return new Response(
     JSON.stringify({
       ok,
