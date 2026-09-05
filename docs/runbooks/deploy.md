@@ -16,6 +16,7 @@ O workflow é `.github/workflows/deploy.yml`; os scripts auxiliares estão em `s
 
 - O domínio `meuvascao.com` precisa estar como zona na Cloudflare (DNS gerenciado lá) para a rota `custom_domain` da produção funcionar. O preview não depende disso (usa `workers.dev`).
 - `npx wrangler login` e depois `npx wrangler whoami` para anotar o **Account ID**.
+- A conta precisa de um **subdomínio workers.dev** (o preview vive em `meuvascao-preview.<subdomínio>.workers.dev`). Abrir Workers & Pages no painel cria um automaticamente; também dá para registrar por API (`PUT /accounts/<id>/workers/subdomain`). O da conta é `ovictoraurelio`, então o preview fica em `meuvascao-preview.ovictoraurelio.workers.dev` e cada PR em `pr-<n>-meuvascao-preview.ovictoraurelio.workers.dev`.
 
 ### 2. Bancos D1
 
