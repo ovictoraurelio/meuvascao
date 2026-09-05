@@ -42,7 +42,7 @@
         {
           "binding": "DB",
           "database_name": "meuvascao-preview",
-          "database_id": "SUBSTITUIR_APOS_wrangler_d1_create",
+          "database_id": "f4f3f50d-da5f-4421-b22c-8c57f93ac554",
           "migrations_dir": "migrations",
         },
       ],
@@ -59,7 +59,7 @@
         {
           "binding": "DB",
           "database_name": "meuvascao-prod",
-          "database_id": "SUBSTITUIR_APOS_wrangler_d1_create",
+          "database_id": "b0221b14-4f31-477f-94b7-2cf8d0238a12",
           "migrations_dir": "migrations",
         },
       ],
