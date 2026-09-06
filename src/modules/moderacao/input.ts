@@ -8,7 +8,9 @@ const booleanInput = z
 export const reasonInput = z.object({ id, reason });
 export const suspensionInput = reasonInput.extend({ suspended: booleanInput });
 export const slowModeInput = reasonInput.extend({
-  seconds: z.coerce.number().int().min(0).max(3600),
+  seconds: z
+    .union([z.number(), z.string().trim().regex(/^\d+$/).transform(Number)])
+    .pipe(z.number().int().min(0).max(3600)),
 });
 export const threadClosedInput = reasonInput.extend({ closed: booleanInput });
 export const writingClosedInput = z.object({ closed: booleanInput, reason });

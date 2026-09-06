@@ -324,3 +324,27 @@ test("formulário aceita false literal sem converter em suspensão verdadeira", 
     }),
   ).rejects.toThrow();
 });
+
+test("modo lento não converte campo vazio ou booleano em intervalo válido", async () => {
+  const moderator = await actor();
+  const { threadId } = await fixture();
+  for (const seconds of ["", " ", false, null, 0.5]) {
+    await expect(
+      setSlowMode(db, moderator, {
+        id: threadId,
+        seconds,
+        reason: "Entrada inválida",
+      }),
+    ).rejects.toThrow();
+  }
+  await setSlowMode(db, moderator, {
+    id: threadId,
+    seconds: "30",
+    reason: "Intervalo explícito",
+  });
+  const [thread] = await db
+    .select()
+    .from(threads)
+    .where(eq(threads.id, threadId));
+  expect(thread?.slowModeSeconds).toBe(30);
+});
