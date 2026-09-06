@@ -31,7 +31,6 @@ export const server = {
         // num nome que o schema Zod escolheria — por isso o parsing manual em vez de deixar o
         // Astro casar FormData com o schema pelo nome de cada chave.
         const raw = {
-          channel: formData.get("channel"),
           value: formData.get("value"),
           sourcePage: formData.get("sourcePage"),
           consent: formData.get("consent") === "on",

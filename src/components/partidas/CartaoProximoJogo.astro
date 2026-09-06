@@ -1,0 +1,102 @@
+---
+import { formatBRT } from "@/lib/time/brt";
+
+// Forma estrutural, não importada de @/modules/partidas: componentes de apresentação não
+// importam módulos de domínio (eslint no-restricted-imports), mesmo só para o tipo.
+interface ProximoJogo {
+  slug: string;
+  opponentName: string;
+  competition: string;
+  homeAway: "casa" | "fora" | "neutro";
+  kickoffAt: Date | null;
+  kickoffPrecision: "confirmado" | "indefinido";
+  venue: string | null;
+  status: "agendado" | "adiado" | "indefinido" | "encerrado" | "cancelado";
+}
+
+interface Props {
+  match: ProximoJogo | null;
+}
+
+const { match } = Astro.props;
+
+const STATUS_LABEL: Record<string, string> = {
+  agendado: "",
+  adiado: "Adiado",
+  indefinido: "",
+  encerrado: "Encerrado",
+  cancelado: "Cancelado",
+};
+---
+
+<section class="cartao" data-testid="dia-de-vasco" aria-label="Dia de Vasco">
+  <h2>Dia de Vasco</h2>
+  {
+    match ? (
+      <>
+        <p class="adversario">
+          Vasco {match.homeAway === "fora" ? "×" : "x"} {match.opponentName}
+        </p>
+        <p class="detalhes">
+          {match.competition}
+          {match.status !== "agendado" && ` · ${STATUS_LABEL[match.status]}`}
+        </p>
+        <p class="horario">
+          {match.kickoffPrecision === "confirmado" && match.kickoffAt
+            ? formatBRT(match.kickoffAt)
+            : "Horário a confirmar"}
+          {match.venue && ` · ${match.venue}`}
+        </p>
+        <a href={`/jogos/${match.slug}#comentar`} class="cta">
+          Ver jogo e entrar na resenha
+        </a>
+      </>
+    ) : (
+      <p>Ainda não há o próximo jogo do Vasco cadastrado.</p>
+    )
+  }
+</section>
+
+<style>
+  .cartao {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .cartao h2 {
+    font-size: var(--type-lg);
+  }
+
+  .cartao p {
+    font-size: var(--type-sm);
+    color: var(--color-paper-muted);
+  }
+
+  .adversario {
+    font-family: var(--font-display);
+    font-size: var(--type-xl);
+    font-weight: var(--font-display-weight);
+    color: var(--color-paper);
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--size-tap-target-min);
+    margin-block-start: var(--space-2);
+    padding-inline: var(--space-4);
+    color: var(--color-ink);
+    text-align: center;
+    background-color: var(--color-paper);
+    border-radius: var(--radius-md);
+  }
+
+  .cta:hover {
+    text-decoration: none;
+  }
+</style>

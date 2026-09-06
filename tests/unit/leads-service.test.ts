@@ -6,11 +6,13 @@ vi.mock("cloudflare:workers", () => ({
   env: { ENVIRONMENT: "development", SITE_URL: "http://localhost:4321" },
 }));
 
-import { leadInputSchema } from "@/modules/curadoria/leads.service";
+import {
+  detectLeadChannel,
+  leadInputSchema,
+} from "@/modules/curadoria/leads.service";
 
 function validInput(overrides: Partial<Record<string, unknown>> = {}) {
   return {
-    channel: "email",
     value: "torcedor@example.com",
     sourcePage: "/",
     consent: true,
@@ -19,6 +21,16 @@ function validInput(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+describe("detectLeadChannel", () => {
+  it("um valor com @ é e-mail", () => {
+    expect(detectLeadChannel("torcedor@example.com")).toBe("email");
+  });
+
+  it("um valor sem @ é WhatsApp", () => {
+    expect(detectLeadChannel("21999999999")).toBe("whatsapp");
+  });
+});
+
 describe("leadInputSchema", () => {
   it("aceita um e-mail válido com consentimento", () => {
     expect(leadInputSchema.safeParse(validInput()).success).toBe(true);
@@ -26,23 +38,31 @@ describe("leadInputSchema", () => {
 
   it("aceita um WhatsApp válido com DDD", () => {
     const result = leadInputSchema.safeParse(
-      validInput({ channel: "whatsapp", value: "(21) 99999-9999" }),
+      validInput({ value: "(21) 99999-9999" }),
     );
     expect(result.success).toBe(true);
   });
 
-  it("rejeita e-mail malformado", () => {
+  it("rejeita e-mail malformado com a mesma mensagem genérica de contato inválido", () => {
     const result = leadInputSchema.safeParse(
-      validInput({ value: "não-é-um-email" }),
+      validInput({ value: "não-é-um-email@" }),
     );
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toMatch(
+        /e-mail ou telefone válido/i,
+      );
+    }
   });
 
   it("rejeita WhatsApp sem dígitos suficientes para ter DDD", () => {
-    const result = leadInputSchema.safeParse(
-      validInput({ channel: "whatsapp", value: "12345" }),
-    );
+    const result = leadInputSchema.safeParse(validInput({ value: "12345" }));
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toMatch(
+        /e-mail ou telefone válido/i,
+      );
+    }
   });
 
   it("rejeita sem consentimento", () => {

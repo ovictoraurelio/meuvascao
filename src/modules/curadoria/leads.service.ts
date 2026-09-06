@@ -5,6 +5,7 @@ import { sha256Hex } from "@/lib/crypto/hash";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 import { countRecentByIpHash, createLead, type Lead } from "./leads.repo";
+import type { LeadChannel } from "./lead-value-normalize";
 
 // Versão vigente da política de privacidade mostrada no consentimento — atualizar junto com
 // content/paginas/privacidade (fatia F10) quando o texto mudar.
@@ -13,10 +14,21 @@ export const CURRENT_PRIVACY_VERSION = "2026-01-01";
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_PER_IP = 5;
 
+const INVALID_CONTACT_MESSAGE = "Informe um e-mail ou telefone válido.";
+
+/** Um único campo aceita e-mail ou WhatsApp (docs/02): o "@" decide qual dos dois é. */
+export function detectLeadChannel(value: string): LeadChannel {
+  return value.includes("@") ? "email" : "whatsapp";
+}
+
+function isValidContact(channel: LeadChannel, value: string): boolean {
+  if (channel === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return value.replace(/\D/g, "").length >= 10;
+}
+
 export const leadInputSchema = z
   .object({
-    channel: z.enum(["email", "whatsapp"]),
-    value: z.string().trim().min(1).max(200),
+    value: z.string().trim().min(1, INVALID_CONTACT_MESSAGE).max(200),
     sourcePage: z.string().min(1).max(200),
     consent: z.boolean(),
     // Campo armadilha: só um bot preenche um input que o CSS esconde do usuário real. Sem limite
@@ -33,24 +45,11 @@ export const leadInputSchema = z
         message: "É preciso aceitar para continuar.",
       });
     }
-    if (
-      data.channel === "email" &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.value)
-    ) {
+    if (!isValidContact(detectLeadChannel(data.value), data.value)) {
       ctx.addIssue({
         code: "custom",
         path: ["value"],
-        message: "Informe um e-mail válido.",
-      });
-    }
-    if (
-      data.channel === "whatsapp" &&
-      data.value.replace(/\D/g, "").length < 10
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["value"],
-        message: "Informe um WhatsApp válido, com DDD.",
+        message: INVALID_CONTACT_MESSAGE,
       });
     }
   });
@@ -85,7 +84,7 @@ export async function registerLead(
   if (recent >= RATE_LIMIT_MAX_PER_IP) throw new RateLimitedError();
 
   return createLead(db, {
-    channel: input.channel,
+    channel: detectLeadChannel(input.value),
     value: input.value,
     sourcePage: input.sourcePage,
     privacyVersion: CURRENT_PRIVACY_VERSION,
