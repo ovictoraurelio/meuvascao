@@ -37,3 +37,9 @@ Achados: fallback antibot inseguro, sender de preview inacessível, logout globa
 F7 aprovada em d1db5e7: papéis no servidor, auditoria em batch, datas válidas e exportação dos IDs efetivamente selecionados. Vuca validou 191 testes unitários/banco e 76 E2E. F10 passou em 18 E2E; F11 parcial passou em 9 testes e ensaio real de restore local. A sonda remota usa Origin válido para não confundir proteção CSRF com bloqueio do dev-login.
 
 Preparação antecipada de publicação: cadastro público fechado por padrão; middleware de produção com CSP/HSTS e rotas privadas no-store/noindex. CSS emitido externamente para funcionar com CSP; 8 testes HTTP/navegador em produção passaram. Preview do PR14 disponível e aprovado pela sonda.
+
+## Primeira publicação antecipada
+
+A prioridade de colocar o domínio online permitiu antecipar a entrega operacional enquanto F8/F9 eram implementadas em paralelo. PR14 integrado em `5c216606b3b06848459ad4f517b97bd69fcf0598` após CI verde. Workflow de produção `34050096004` concluído com sucesso em 06/09/2026. A aprovação do Environment foi registrada pelo agente sob autorização explícita do fundador nesta sessão, sem remover ou alterar a proteção.
+
+Verificação externa: `https://meuvascao.com/api/health` respondeu `ok:true`, `env:production`, `db:ok`; home respondeu HTTP 200, sem formulários, com aviso de indisponibilidade e link de privacidade. O banco estava vazio antes das migrações e nenhum seed foi enviado. Esse marco é publicação de leitura; não constitui abertura do piloto com participação nem conclusão das medições remotas do roadmap.
