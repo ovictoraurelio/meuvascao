@@ -138,3 +138,19 @@ test.describe("F8: Resenha", () => {
     expect(response.status()).toBe(400);
   });
 });
+
+test("home destaca uma resenha existente e leva aos comentários", async ({
+  page,
+}) => {
+  await game(page);
+  await publish(page, "Uma conversa real para o destaque");
+  await page.goto("/");
+  const link = page
+    .getByTestId("resenha-destaque")
+    .getByRole("link", { name: "Ver resenha" });
+  await expect(link).toHaveAttribute("href", /\/jogos\/.+#comentar$/);
+  await link.click();
+  await expect(
+    page.locator('article[id^="comentario-"]').first(),
+  ).toBeVisible();
+});
