@@ -29,3 +29,8 @@ playwright-report/
 # operação
 backups/
 *.log
+
+# Checkouts e configuração de agentes locais não pertencem ao produto
+.worktrees/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

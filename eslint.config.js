@@ -32,6 +32,7 @@ const forbiddenHtmlSinks = [
 
 export default defineConfig([
   globalIgnores([
+    ".worktrees/",
     "dist/",
     ".astro/",
     ".wrangler/",

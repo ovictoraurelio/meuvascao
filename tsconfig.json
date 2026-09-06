@@ -13,6 +13,7 @@
     }
   },
   "exclude": [
+    ".worktrees",
     "dist",
     "node_modules",
     "prototype",
