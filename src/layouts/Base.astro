@@ -25,22 +25,90 @@ const { title, description, active } = Astro.props;
     <Meta title={title} description={description} />
   </head>
   <body>
-    <p class="disclaimer">
+    <a href="#conteudo" class="pular-conteudo">Pular para o conteúdo</a>
+    <div class="linha-torcida">
+      <div class="linha-conteudo">
+        <span>Feito pela torcida. Vivido pela torcida.</span>
+        <span
+          >O sentimento não pode parar. <span aria-hidden="true">✠</span></span
+        >
+      </div>
+    </div>
+    <p class="disclaimer disclaimer-mobile">
       Portal independente, feito por torcedores. Sem vínculo oficial com o Club
       de Regatas Vasco da Gama.
     </p>
-    <a href="/" class="marca">
-      <img src="/brand/simbolo.svg" alt="" width="28" height="28" />
-      <span>Meu Vascão</span>
-    </a>
-    <Faixa />
-    <main>
+    <header class="cabecalho">
+      <div class="cabecalho-conteudo">
+        <a href="/" class="marca" aria-label="Meu Vascão, início">
+          <span class="marca-cruz" aria-hidden="true">✠</span>
+          <span class="marca-texto"
+            ><span class="marca-meu">Meu</span> Vascão<span class="marca-ponto"
+              >.</span
+            ></span
+          >
+        </a>
+        <nav class="navegacao-desktop" aria-label="Navegação principal">
+          <ul>
+            <li>
+              <a
+                href="/"
+                aria-current={active === "inicio" ? "page" : undefined}
+                >Início</a
+              >
+            </li>
+            <li><a href="/#noticias">Notícias</a></li>
+            <li>
+              <a
+                href="/jogos"
+                aria-current={active === "jogos" ? "page" : undefined}>Jogos</a
+              >
+            </li>
+            <li>
+              <a
+                href="/resenha"
+                aria-current={active === "resenha" ? "page" : undefined}
+                >Resenha da torcida<span
+                  class="ponto-resenha"
+                  aria-hidden="true"></span></a
+              >
+            </li>
+          </ul>
+        </nav>
+        <a
+          class="entrar-torcida"
+          href="/perfil"
+          aria-current={active === "perfil" ? "page" : undefined}
+          >Entrar pra torcida <span class="entrar-seta" aria-hidden="true"
+            >↗</span
+          ></a
+        >
+      </div>
+    </header>
+    <div class="faixa-mobile"><Faixa /></div>
+    <main id="conteudo" tabindex="-1">
       <slot />
     </main>
-    <footer class="institucionais">
-      <a href="/sobre">Sobre</a>
-      <a href="/regras-da-resenha">Regras da resenha</a>
-      <a href="/privacidade">Privacidade</a>
+    <footer class="rodape">
+      <div class="rodape-conteudo">
+        <div class="rodape-identidade">
+          <a href="/" class="rodape-marca" aria-label="Meu Vascão, início"
+            ><span class="marca-cruz" aria-hidden="true">✠</span> Meu Vascão<span
+              class="marca-ponto">.</span
+            ></a
+          >
+          <p>Feito por fãs. Movido por um amor infinito.</p>
+        </div>
+        <nav class="institucionais" aria-label="Sobre o portal">
+          <a href="/sobre">Sobre</a>
+          <a href="/regras-da-resenha">Regras da resenha</a>
+          <a href="/privacidade">Privacidade</a>
+        </nav>
+        <p class="disclaimer disclaimer-rodape">
+          Portal independente, feito por torcedores. Sem vínculo oficial com o
+          Club de Regatas Vasco da Gama.
+        </p>
+      </div>
     </footer>
     <nav class="barra-inferior" aria-label="Navegação principal">
       <ul>
@@ -62,18 +130,14 @@ const { title, description, active } = Astro.props;
 </html>
 
 <style>
-  .institucionais {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-4);
-    padding: var(--space-4);
+  .marca-cruz {
+    color: var(--color-accent);
+    font-size: var(--type-3xl);
+    line-height: 1;
   }
 
-  .institucionais a {
-    display: inline-flex;
-    align-items: center;
-    min-block-size: var(--size-tap-target-min);
+  .rodape-marca .marca-cruz {
+    font-size: var(--type-xl);
   }
 
   body {
@@ -82,20 +146,44 @@ const { title, description, active } = Astro.props;
     min-block-size: 100vh;
   }
 
-  /* Legível no topo mobile (docs/02:9): não é letra miúda de rodapé. */
+  .pular-conteudo {
+    position: absolute;
+    z-index: 10;
+    inset-block-start: var(--space-2);
+    inset-inline-start: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-paper);
+    transform: translateY(-200%);
+  }
+
+  .pular-conteudo:focus {
+    transform: translateY(0);
+  }
+
+  .linha-torcida,
+  .navegacao-desktop,
+  .entrar-torcida {
+    display: none;
+  }
+
   .disclaimer {
+    font-size: var(--type-xs);
+    color: var(--color-ink-muted);
+  }
+
+  /* O aviso continua no topo mobile, legível sem abrir menus. */
+  .disclaimer-mobile {
     padding: var(--space-2) var(--space-4);
     font-size: var(--type-sm);
-    color: var(--color-ink-muted);
     text-align: center;
-    background-color: var(--color-paper);
   }
 
   .marca {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
     justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-tap-target-min);
     padding-block: var(--space-2);
     font-family: var(--font-display);
     font-size: var(--type-lg);
@@ -103,13 +191,74 @@ const { title, description, active } = Astro.props;
     color: var(--color-ink);
   }
 
+  .marca img {
+    inline-size: 28px;
+    block-size: 28px;
+  }
+
   .marca:hover {
     text-decoration: none;
   }
 
+  .marca-ponto {
+    color: var(--color-accent);
+  }
+
   main {
     flex: 1;
+    inline-size: 100%;
+    min-inline-size: 0;
     padding-block-end: var(--space-8);
+  }
+
+  .rodape {
+    border-block-start: 1px solid var(--color-paper-muted);
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .rodape-identidade {
+    text-align: center;
+  }
+
+  .rodape-identidade p {
+    font-size: var(--type-xs);
+    color: var(--color-ink-muted);
+  }
+
+  .rodape-marca {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--size-tap-target-min);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--type-lg);
+    font-weight: var(--font-display-weight);
+    text-transform: uppercase;
+  }
+
+  .rodape-marca img {
+    margin-inline-end: var(--space-2);
+  }
+
+  .institucionais {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-block: var(--space-3);
+    font-size: var(--type-sm);
+  }
+
+  .institucionais a {
+    min-inline-size: var(--size-tap-target-min);
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--size-tap-target-min);
+  }
+
+  .disclaimer-rodape {
+    text-align: center;
   }
 
   .barra-inferior {
@@ -146,5 +295,178 @@ const { title, description, active } = Astro.props;
   .barra-inferior a[aria-current="page"] {
     color: var(--color-paper);
     font-weight: var(--font-display-weight);
+  }
+
+  @media (width >= 64rem) {
+    .linha-torcida {
+      display: block;
+      background: var(--color-ink);
+      color: var(--color-paper-muted);
+      font-size: var(--type-xs);
+      letter-spacing: 0.14em;
+    }
+
+    .linha-conteudo,
+    .cabecalho-conteudo,
+    .rodape-conteudo {
+      max-inline-size: 1440px;
+      margin-inline: auto;
+      padding-inline: var(--space-6);
+    }
+
+    .linha-conteudo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-block-size: 36px;
+    }
+
+    .linha-conteudo > span:first-child {
+      text-transform: uppercase;
+    }
+
+    .linha-conteudo > span:last-child > span {
+      color: var(--color-accent-on-dark);
+      margin-inline-start: var(--space-4);
+    }
+
+    .disclaimer-mobile,
+    .faixa-mobile,
+    .barra-inferior {
+      display: none;
+    }
+
+    .cabecalho {
+      border-block-end: 1px solid var(--color-paper-muted);
+    }
+
+    .cabecalho-conteudo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-6);
+      min-block-size: 112px;
+    }
+
+    .marca {
+      flex-shrink: 0;
+      justify-content: flex-start;
+      gap: var(--space-3);
+      font-size: var(--type-2xl);
+      line-height: 0.95;
+      text-transform: uppercase;
+    }
+
+    .marca img {
+      inline-size: 36px;
+      block-size: 36px;
+    }
+
+    .marca-meu {
+      display: block;
+      font-size: var(--type-xl);
+    }
+
+    .navegacao-desktop {
+      display: block;
+      align-self: stretch;
+    }
+
+    .navegacao-desktop ul {
+      display: flex;
+      gap: var(--space-5);
+      block-size: 100%;
+    }
+
+    .navegacao-desktop li {
+      display: flex;
+    }
+
+    .navegacao-desktop a {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-block-size: var(--size-tap-target-min);
+      color: var(--color-ink);
+      font-size: var(--type-sm);
+      font-weight: var(--font-display-weight);
+      white-space: nowrap;
+    }
+
+    .navegacao-desktop a[aria-current="page"]::after {
+      position: absolute;
+      inset-inline: 0;
+      inset-block-end: 0;
+      block-size: 3px;
+      background: var(--color-accent);
+      content: "";
+    }
+
+    .ponto-resenha {
+      inline-size: 6px;
+      block-size: 6px;
+      border-radius: var(--radius-pill);
+      background: var(--color-accent);
+    }
+
+    .entrar-torcida {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      min-block-size: 56px;
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-sm);
+      background: var(--color-ink);
+      color: var(--color-paper);
+      font-size: var(--type-sm);
+      font-weight: var(--font-display-weight);
+      white-space: nowrap;
+    }
+
+    .entrar-seta {
+      font-size: var(--type-xl);
+      font-weight: var(--font-body-weight);
+    }
+
+    .entrar-torcida:hover {
+      background: var(--color-accent);
+      text-decoration: none;
+    }
+
+    main {
+      max-inline-size: 1440px;
+      margin-inline: auto;
+      padding-inline: var(--space-6);
+    }
+
+    .rodape {
+      padding: var(--space-6) 0;
+    }
+
+    .rodape-conteudo {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-3) var(--space-6);
+    }
+
+    .rodape-identidade {
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+      text-align: start;
+    }
+
+    .institucionais {
+      margin-block: 0;
+      margin-inline-start: auto;
+    }
+
+    .disclaimer-rodape {
+      inline-size: 100%;
+      text-align: end;
+    }
   }
 </style>

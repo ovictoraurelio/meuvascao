@@ -21,14 +21,13 @@ const [nextMatch, em1Minuto, ultimasNoticias, activeThreads] =
     listThreads(db),
   ]);
 
-const highlightedThread = activeThreads[0];
 const comentarHref = nextMatch ? `/jogos/${nextMatch.slug}#comentar` : null;
 const result = Astro.getActionResult(actions.leads.cadastrar);
 const semDadosNenhum =
   !nextMatch &&
   em1Minuto.length === 0 &&
   ultimasNoticias.length === 0 &&
-  !highlightedThread;
+  activeThreads.length === 0;
 ---
 
 <Base
@@ -37,47 +36,146 @@ const semDadosNenhum =
   active="inicio"
 >
   <div class="home">
-    <h1 class="visually-hidden">Meu Vascão</h1>
-    {
-      semDadosNenhum && (
-        <p class="aviso">
-          Ainda não há jogos, notícias ou resenha cadastrados.
+    <section class="welcome" aria-label="Bem-vindo à nossa arquibancada">
+      <div>
+        <p class="eyebrow">Nosso time. Nossa casa.</p><h1>
+          Aqui é Vasco<span>.</span> E ponto.
+        </h1><p class="intro">
+          O dia a dia do Gigante, com a voz de quem nunca abandona.
         </p>
-      )
-    }
-
-    <CartaoProximoJogo match={nextMatch} />
-
-    <ListaLinks
-      heading="Em 1 minuto"
-      links={em1Minuto}
-      testId="em-1-minuto"
-      comentarHref={comentarHref}
-    />
-
-    <section data-testid="resenha-destaque" aria-label="Resenha em destaque">
-      <h2>A torcida tá falando</h2>
-      {
-        highlightedThread ? (
-          <p>
-            Vasco x {highlightedThread.opponentName}.{" "}
-            <a href={`/jogos/${highlightedThread.slug}#comentar`}>
-              Ver resenha
-            </a>
-          </p>
-        ) : (
-          <p>A resenha começa no primeiro comentário.</p>
-        )
-      }
+      </div>
+      <p class="welcome-note">
+        <span aria-hidden="true">✠</span><span
+          ><strong>A nossa força vem da arquibancada</strong><br />Feito pela
+          torcida. Vivido pela torcida.</span
+        >
+      </p>
     </section>
-
-    <ListaLinks
-      heading="Últimas notícias"
-      links={ultimasNoticias}
-      testId="ultimas-noticias"
-      comentarHref={comentarHref}
-    />
-
+    <div class="portal-grid">
+      <section
+        class="hero"
+        data-testid="portal-hero"
+        aria-label="Nossa casa, nossa história"
+      >
+        <div class="hero-art" aria-hidden="true"></div>
+        <div class="hero-top">
+          <span class="tag">A voz da arquibancada</span><img
+            src="/brand/vasco.svg"
+            alt=""
+            width="70"
+            height="88"
+          />
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">O sentimento não pode parar.</p><h2>
+            Tem coisa que só<br />São Januário explica<span>.</span>
+          </h2><p>
+            Não é só sobre futebol. É sobre pertencer.<br />A nossa casa, a
+            nossa história, a nossa gente.
+          </p><a class="story-link" href="/sobre"
+            >Conheça o portal <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <p class="photo-credit">
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Est%C3%A1dio_de_S%C3%A3o_Janu%C3%A1rio_cropped.jpg"
+            target="_blank"
+            rel="noopener noreferrer"
+            >São Januário · Bernardo1989 / Wikimedia Commons</a
+          > · <a
+            href="https://creativecommons.org/licenses/by-sa/4.0/"
+            target="_blank"
+            rel="noopener noreferrer">CC BY-SA 4.0</a
+          > · Arquivo, enquadramento e sobreposição adaptados.
+        </p>
+      </section>
+      <aside class="sidebar" aria-label="Dia de jogo e torcida">
+        <div class="match-slot"><CartaoProximoJogo match={nextMatch} /></div>
+        <section class="torcida-card">
+          <p class="eyebrow">De vascaíno pra vascaíno</p><h2>
+            Não é uma fase.<br />É a nossa vida.
+          </h2><p>
+            Um portal independente.<br />Uma paixão que não se explica.
+          </p><a href="/regras-da-resenha"
+            >Nosso jeito de torcer <span aria-hidden="true">↗</span></a
+          ><span class="watermark" aria-hidden="true">✠</span>
+        </section>
+      </aside>
+      <section class="radar" id="noticias" aria-label="No radar do Gigante">
+        <div class="section-heading">
+          <h2><span aria-hidden="true">/</span> No radar do Gigante</h2><span
+            class="eyebrow">Curadoria da torcida</span
+          >
+        </div>
+        <ListaLinks
+          heading="Em 1 minuto"
+          links={em1Minuto}
+          testId="em-1-minuto"
+          comentarHref={comentarHref}
+        />
+        <ListaLinks
+          heading="Últimas notícias"
+          links={ultimasNoticias}
+          testId="ultimas-noticias"
+          comentarHref={comentarHref}
+        />
+        {
+          semDadosNenhum && (
+            <p class="aviso">
+              Ainda não há jogos, notícias ou resenha cadastrados. Este espaço
+              recebe a curadoria da nossa equipe.
+            </p>
+          )
+        }
+      </section>
+    </div>
+    <section
+      class="resenha-section"
+      data-testid="resenha-destaque"
+      aria-label="Resenha em destaque"
+    >
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">A arquibancada é aqui</p><h2>
+            A torcida tá falando<span>.</span>
+          </h2>
+        </div><a class="button-dark" href="/resenha"
+          >Chega mais pra resenha <span aria-hidden="true">↗</span></a
+        >
+      </div>
+      <div class="resenha-grid">
+        {
+          activeThreads.length ? (
+            activeThreads.slice(0, 3).map((thread) => (
+              <article class="conversation">
+                <>
+                  <p class="eyebrow">Papo de jogo</p>
+                  <h3>Vasco x {thread.opponentName}</h3>
+                  <a href={`/jogos/${thread.slug}#comentar`}>
+                    Ver resenha <span aria-hidden="true">↗</span>
+                  </a>
+                </>
+              </article>
+            ))
+          ) : (
+            <div class="resenha-empty">
+              <>
+                <img src="/brand/simbolo.svg" width="48" height="48" alt="" />
+                <div>
+                  <>
+                    <h3>Futebol se vive junto.</h3>
+                    <p>A resenha começa no primeiro comentário.</p>
+                  </>
+                </div>
+                <a href="/resenha">
+                  Conheça o espaço da torcida <span aria-hidden="true">→</span>
+                </a>
+              </>
+            </div>
+          )
+        }
+      </div>
+    </section>
     <section class="captura" aria-label="Cadastro de novidades">
       <h2>Quer saber na hora?</h2>
       <p>Consulte o <a href="/privacidade">aviso de privacidade</a>.</p>
@@ -129,45 +227,355 @@ const semDadosNenhum =
     </section>
   </div>
 </Base>
-
 <style>
-  .home p a {
-    text-decoration: underline;
-  }
-
   .home {
+    overflow-wrap: anywhere;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-7);
+    padding: var(--space-5) var(--space-4);
   }
 
-  .aviso {
-    padding-inline: var(--space-4);
+  .home :where(h1, h2, h3, p, a) {
+    overflow-wrap: anywhere;
+  }
+
+  .home > *,
+  .portal-grid > *,
+  .conversation {
+    min-inline-size: 0;
+  }
+
+  .eyebrow {
+    font-size: var(--type-xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--color-ink-muted);
   }
 
-  .captura,
-  .home > section {
-    padding-inline: var(--space-4);
+  .welcome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5);
   }
 
-  .captura h2,
-  .home > section h2 {
-    font-size: var(--type-lg);
+  .welcome h1 {
+    margin-block: var(--space-3);
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    letter-spacing: -0.025em;
+  }
+
+  h1 span,
+  .section-heading :where(h2 span) {
+    color: var(--color-accent);
+  }
+
+  .intro {
+    color: var(--color-ink-muted);
+    font-size: var(--type-base);
+  }
+
+  .welcome-note {
+    display: none;
+  }
+
+  .portal-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "match" "hero" "radar" "torcida";
+    gap: var(--space-5);
+  }
+
+  .hero {
+    grid-area: hero;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-block-size: 25rem;
+  }
+
+  .hero-art {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(180deg, transparent, var(--color-ink)),
+      url("/images/sao-januario.jpg");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.75;
+  }
+
+  .photo-credit {
+    padding: 0 var(--space-5) var(--space-4);
+    font-size: var(--type-xs);
+    color: var(--color-paper);
+  }
+
+  .photo-credit a {
+    color: var(--color-paper);
+    text-decoration: underline;
+  }
+
+  .hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--space-5);
+  }
+
+  .hero-top img {
+    inline-size: 3.5rem;
+    block-size: 4.5rem;
+    object-fit: contain;
+  }
+
+  .tag {
+    background: var(--color-accent);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--type-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+
+  .hero-content {
+    padding: var(--space-5);
+  }
+
+  .hero-content .eyebrow {
+    color: var(--color-paper);
+  }
+
+  .hero h2 {
+    font-size: clamp(2.25rem, 3.6vw, 4.25rem);
+    text-transform: uppercase;
+    margin-block: var(--space-3) var(--space-4);
+    max-inline-size: 22ch;
+  }
+
+  .hero-content > :where(p:not(.eyebrow)) {
+    font-size: var(--type-sm);
+    line-height: 1.7;
+  }
+
+  .story-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--color-paper);
+    min-block-size: 44px;
+    max-inline-size: 17rem;
+    margin-block-start: var(--space-5);
+    font-weight: 700;
+  }
+
+  .story-link span {
+    font-size: var(--type-xl);
+  }
+
+  .sidebar {
+    display: contents;
+  }
+
+  .match-slot {
+    grid-area: match;
+  }
+
+  .torcida-card {
+    grid-area: torcida;
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-5);
+    border: 1px solid var(--color-paper-muted);
+    border-radius: var(--radius-md);
+  }
+
+  .torcida-card h2 {
+    font-size: var(--type-2xl);
+    margin-block: var(--space-4);
+  }
+
+  .torcida-card > :where(p:not(.eyebrow)) {
+    color: var(--color-ink-muted);
+    font-size: var(--type-sm);
+  }
+
+  .torcida-card a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    margin-block-start: var(--space-3);
+    gap: var(--space-3);
+    font-size: var(--type-sm);
+    font-weight: 700;
+  }
+
+  .watermark {
+    position: absolute;
+    inset-inline-end: var(--space-4);
+    inset-block-start: var(--space-7);
+    font-size: calc(var(--type-3xl) * 2);
+    color: var(--color-accent);
+    opacity: 0.1;
+    pointer-events: none;
+  }
+
+  .radar {
+    grid-area: radar;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-inline-size: 0;
+    scroll-margin-block-start: var(--space-6);
+  }
+
+  .section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .section-heading h2 {
+    font-size: var(--type-2xl);
+  }
+
+  .section-heading h2 > span:first-child {
+    margin-inline-end: var(--space-2);
+  }
+
+  .radar :where(.section-heading > .eyebrow) {
+    display: none;
+  }
+
+  .aviso {
+    color: var(--color-ink-muted);
+    font-size: var(--type-sm);
+  }
+
+  .resenha-section {
+    border-block-start: 1px solid var(--color-paper-muted);
+    padding-block-start: var(--space-6);
+  }
+
+  .resenha-section .eyebrow {
     margin-block-end: var(--space-2);
+  }
+
+  .resenha-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block-start: var(--space-5);
+  }
+
+  .conversation {
+    padding: var(--space-5);
+    border: 1px solid var(--color-paper-muted);
+    border-radius: var(--radius-md);
+  }
+
+  .conversation h3 {
+    font-size: var(--type-xl);
+  }
+
+  .conversation a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-block-size: 44px;
+    margin-block-start: var(--space-4);
+    font-size: var(--type-sm);
+  }
+
+  .resenha-empty {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    border: 1px solid var(--color-paper-muted);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    grid-column: 1/-1;
+  }
+
+  .resenha-empty p {
+    color: var(--color-ink-muted);
+    margin-block-start: var(--space-2);
+  }
+
+  .resenha-empty > a {
+    display: flex;
+    align-items: center;
+    min-block-size: 44px;
+    gap: var(--space-4);
+    font-size: var(--type-sm);
+  }
+
+  .button-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    padding: var(--space-3) var(--space-4);
+    min-block-size: 44px;
+    border-radius: var(--radius-sm);
+    font-size: var(--type-sm);
+    font-weight: 700;
+  }
+
+  .captura {
+    padding: var(--space-5);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border-radius: var(--radius-md);
+  }
+
+  .captura h2 {
+    font-size: var(--type-2xl);
+    margin-block-end: var(--space-3);
+  }
+
+  .captura p {
+    max-inline-size: 65ch;
+  }
+
+  .captura p a {
+    color: var(--color-paper);
+    text-decoration: underline;
+  }
+
+  .captura > p + p {
+    margin-block-start: var(--space-3);
+    font-size: var(--type-sm);
   }
 
   .captura form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     max-inline-size: 28rem;
+    margin-block-start: var(--space-4);
   }
 
   .captura input[type="text"] {
-    min-block-size: var(--size-tap-target-min);
+    min-block-size: 44px;
     padding-inline: var(--space-2);
-    border: 1px solid var(--color-ink-muted);
+    color: var(--color-ink);
+    background: var(--color-paper);
+    border: 1px solid var(--color-paper-muted);
     border-radius: var(--radius-sm);
   }
 
@@ -187,10 +595,84 @@ const semDadosNenhum =
   }
 
   .captura button {
-    min-block-size: var(--size-tap-target-min);
+    min-block-size: 44px;
     padding-inline: var(--space-4);
     color: var(--color-paper);
-    background-color: var(--color-accent);
+    background: var(--color-accent);
     border-radius: var(--radius-sm);
+  }
+
+  @media (width >= 64rem) {
+    .home {
+      padding: var(--space-7) 0;
+      gap: var(--space-7);
+    }
+
+    .welcome-note {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-size: var(--type-xs);
+      color: var(--color-ink-muted);
+    }
+
+    .welcome-note > span:first-child {
+      color: var(--color-accent);
+      font-size: var(--type-3xl);
+    }
+
+    .welcome-note strong {
+      color: var(--color-ink);
+    }
+
+    .portal-grid {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-areas: "hero sidebar" "radar sidebar";
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .hero {
+      grid-area: hero;
+      min-block-size: 33rem;
+    }
+
+    .hero-top,
+    .hero-content {
+      padding: var(--space-6);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+      grid-area: sidebar;
+    }
+
+    .radar {
+      grid-area: radar;
+    }
+
+    .radar :where(.section-heading > .eyebrow) {
+      display: block;
+    }
+
+    .resenha-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .resenha-empty > a {
+      margin-inline-start: auto;
+    }
+
+    .captura {
+      padding: var(--space-7);
+    }
+  }
+
+  @media (width >= 80rem) {
+    .portal-grid {
+      grid-template-columns: minmax(0, 1fr) 340px;
+    }
   }
 </style>

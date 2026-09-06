@@ -10,8 +10,22 @@ test("a home cabe em 360 px sem rolagem horizontal", async ({
     "gate de largura só faz sentido no projeto celular",
   );
   await page.goto("/");
-  const scrollWidth = await page.evaluate(
-    () => document.documentElement.scrollWidth,
-  );
-  expect(scrollWidth).toBeLessThanOrEqual(360);
+  const { scrollWidth, overflow } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    overflow: Array.from(document.querySelectorAll("body *"))
+      .filter(
+        (el) =>
+          el.getBoundingClientRect().right > 360 ||
+          el.scrollWidth > el.clientWidth + 1,
+      )
+      .map((el) => ({
+        tag: el.tagName,
+        class: el.className,
+        width: el.getBoundingClientRect().width,
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+        text: el.textContent?.slice(0, 60),
+      })),
+  }));
+  expect(scrollWidth, JSON.stringify(overflow)).toBeLessThanOrEqual(360);
 });

@@ -27,9 +27,11 @@ test("home carrega sem erros de JavaScript e só busca fora do site o que está 
 
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Meu Vascão" }),
+    page.getByRole("heading", { level: 1, name: "Aqui é Vasco. E ponto." }),
   ).toBeVisible();
-  await expect(page.getByText("sem vínculo oficial")).toBeVisible();
+  await expect(
+    page.getByRole("contentinfo").getByText("sem vínculo oficial"),
+  ).toBeVisible();
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
 });

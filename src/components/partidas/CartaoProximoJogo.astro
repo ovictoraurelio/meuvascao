@@ -26,7 +26,13 @@ const { match } = Astro.props;
 ---
 
 <section class="cartao" data-testid="dia-de-vasco" aria-label="Dia de Vasco">
-  <h2>Dia de Vasco</h2>
+  <p class="eyebrow">Próxima batalha</p><h2>Dia de Vasco</h2><img
+    class="escudo"
+    src="/brand/vasco.svg"
+    alt="Escudo do Vasco da Gama"
+    width="80"
+    height="100"
+  />
   {
     match ? (
       <>
@@ -47,9 +53,19 @@ const { match } = Astro.props;
         </a>
       </>
     ) : (
-      <p>Ainda não há o próximo jogo do Vasco cadastrado.</p>
+      <>
+        <>
+          <p>Ainda não há o próximo jogo do Vasco cadastrado.</p>
+          <a class="cta" href="/jogos">
+            Acompanhe a agenda <span aria-hidden="true">→</span>
+          </a>
+        </>
+      </>
     )
   }
+  <p class="match-footer">
+    Aqui a torcida joga junto. <span aria-hidden="true">✠</span>
+  </p>
 </section>
 
 <style>
@@ -71,7 +87,7 @@ const { match } = Astro.props;
     color: var(--color-paper-muted);
   }
 
-  .adversario {
+  .cartao .adversario {
     font-family: var(--font-display);
     font-size: var(--type-xl);
     font-weight: var(--font-display-weight);
@@ -79,6 +95,7 @@ const { match } = Astro.props;
   }
 
   .cta {
+    gap: var(--space-3);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -93,5 +110,71 @@ const { match } = Astro.props;
 
   .cta:hover {
     text-decoration: none;
+  }
+
+  .escudo {
+    inline-size: 48px;
+    block-size: 60px;
+    align-self: center;
+    margin-block: var(--space-4);
+    object-fit: contain;
+  }
+
+  .cartao .eyebrow {
+    font-size: var(--type-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+
+  .cartao .match-footer {
+    text-align: center;
+    font-size: var(--type-xs);
+    margin-block-start: var(--space-3);
+  }
+
+  @media (width >= 64rem) {
+    .escudo {
+      inline-size: 80px;
+      block-size: 100px;
+    }
+
+    .cartao {
+      border: 1px solid var(--color-paper-muted);
+      border-radius: var(--radius-md);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding: var(--space-5);
+      min-block-size: 28rem;
+    }
+
+    .cartao p {
+      color: var(--color-ink-muted);
+    }
+
+    .cartao .adversario {
+      color: var(--color-ink);
+      font-size: var(--type-2xl);
+      text-align: center;
+    }
+
+    .cartao .detalhes,
+    .cartao .horario {
+      text-align: center;
+    }
+
+    .cartao .eyebrow {
+      color: var(--color-accent);
+    }
+
+    .cartao h2 {
+      font-size: var(--type-xl);
+    }
+
+    .cta {
+      background: var(--color-accent);
+      color: var(--color-paper);
+      margin-block-start: auto;
+    }
   }
 </style>

@@ -17,10 +17,13 @@ test("portal distribui destaque e próximo jogo conforme o viewport", async ({
     expect(b.x).toBeGreaterThan(a.x + a.width);
     expect(Math.abs(a.y - b.y)).toBeLessThan(2);
     await expect(
-      page.getByRole("navigation", { name: "Navegação do portal" }),
+      page.getByRole("navigation", {
+        name: "Navegação principal",
+        exact: true,
+      }),
     ).toBeVisible();
   } else {
-    expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
+    expect(a.y).toBeGreaterThanOrEqual(b.y + b.height);
   }
   expect(
     await page.evaluate(

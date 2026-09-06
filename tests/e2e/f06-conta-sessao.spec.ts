@@ -31,7 +31,7 @@ test.describe("F6: Conta e sessão", () => {
     // para fora da janela de "20 mais recentes" antes deste teste conseguir lê-la.
     await page.goto(`/dev/mailbox?to=${encodeURIComponent(email)}`);
     await page
-      .getByRole("link", { name: /entrar/i })
+      .getByRole("link", { name: "Entrar", exact: true })
       .first()
       .click();
   }
@@ -67,7 +67,7 @@ test.describe("F6: Conta e sessão", () => {
     await pedirLinkMagico(page, email);
     await page.goto(`/dev/mailbox?to=${encodeURIComponent(email)}`);
     const link = await page
-      .getByRole("link", { name: /entrar/i })
+      .getByRole("link", { name: "Entrar", exact: true })
       .first()
       .getAttribute("href");
     if (!link)

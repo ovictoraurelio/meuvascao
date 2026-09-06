@@ -147,7 +147,8 @@ test("home destaca uma resenha existente e leva aos comentários", async ({
   await page.goto("/");
   const link = page
     .getByTestId("resenha-destaque")
-    .getByRole("link", { name: "Ver resenha" });
+    .getByRole("link", { name: "Ver resenha" })
+    .first();
   await expect(link).toHaveAttribute("href", /\/jogos\/.+#comentar$/);
   await link.click();
   await expect(
