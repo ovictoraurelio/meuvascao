@@ -27,7 +27,9 @@ test.describe("F4: Home + captura", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByTestId("dia-de-vasco")).toBeVisible();
-    await expect(page.getByText("Adversário Seed")).toBeVisible();
+    await expect(
+      page.getByTestId("dia-de-vasco").getByText("Adversário Seed"),
+    ).toBeVisible();
 
     const links = page.getByTestId("em-1-minuto").getByRole("listitem");
     await expect(links).toHaveCount(3);
