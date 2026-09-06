@@ -35,4 +35,16 @@ describe("buildMatchSlug", () => {
     );
     expect(ida).not.toBe(volta);
   });
+
+  it("recusa gerar um slug quebrado para adversário vazio ou só de símbolos", () => {
+    expect(() =>
+      buildMatchSlug("", "aaaa1111-0000-0000-0000-000000000000"),
+    ).toThrow();
+    expect(() =>
+      buildMatchSlug("   ", "aaaa1111-0000-0000-0000-000000000000"),
+    ).toThrow();
+    expect(() =>
+      buildMatchSlug("★★★", "aaaa1111-0000-0000-0000-000000000000"),
+    ).toThrow();
+  });
 });

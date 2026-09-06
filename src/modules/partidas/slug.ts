@@ -16,6 +16,15 @@ function slugifyOpponent(opponentName: string): string {
 
 export function buildMatchSlug(opponentName: string, matchId: string): string {
   const opponentSlug = slugifyOpponent(opponentName);
+  // Sem isso, um nome vazio ou só com símbolos ("", "  ", "★★★") produziria um slug público
+  // quebrado ("vasco-x--4f8a2b") sem nenhum erro — a validação de negócio (Zod, na ação de
+  // administração que ainda não existe) fica melhor cedo, mas essa função não deveria conseguir
+  // publicar um endereço com esse buraco visível de qualquer jeito.
+  if (!opponentSlug) {
+    throw new Error(
+      `nome de adversário inválido para gerar slug: "${opponentName}"`,
+    );
+  }
   const suffix = matchId.replace(/-/g, "").slice(0, 6);
   return `vasco-x-${opponentSlug}-${suffix}`;
 }
