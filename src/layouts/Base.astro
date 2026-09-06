@@ -113,8 +113,8 @@ const { title, description, active } = Astro.props;
   }
 
   .barra-inferior {
-    position: sticky;
-    inset-block-end: 0;
+    /* Em fluxo: a navegação não cobre links do rodapé durante a rolagem. */
+    flex-shrink: 0;
     background-color: var(--color-ink);
     border-block-start: 1px solid var(--color-accent);
   }
