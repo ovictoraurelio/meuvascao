@@ -48,34 +48,28 @@ async function fixture() {
   const commentId = crypto.randomUUID();
   const reportId = crypto.randomUUID();
   const now = new Date();
-  await db
-    .insert(threads)
-    .values({
-      id: threadId,
-      matchId: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    });
-  await db
-    .insert(comments)
-    .values({
-      id: commentId,
-      threadId,
-      authorId: author.uid,
-      body: "Texto denunciado",
-      idempotencyKey: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    });
-  await db
-    .insert(reports)
-    .values({
-      id: reportId,
-      commentId,
-      reporterId: crypto.randomUUID(),
-      reason: "spam",
-      createdAt: now,
-    });
+  await db.insert(threads).values({
+    id: threadId,
+    matchId: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db.insert(comments).values({
+    id: commentId,
+    threadId,
+    authorId: author.uid,
+    body: "Texto denunciado",
+    idempotencyKey: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db.insert(reports).values({
+    id: reportId,
+    commentId,
+    reporterId: crypto.randomUUID(),
+    reason: "spam",
+    createdAt: now,
+  });
   return { author, threadId, commentId, reportId };
 }
 
@@ -260,4 +254,73 @@ test("denúncia pode ser encerrada sem ocultar comentário", async () => {
     .from(reports)
     .where(eq(reports.id, reportId));
   expect(report?.status).toBe("resolved");
+});
+
+test("falha na auditoria reverte ocultação e resolução no mesmo batch", async () => {
+  const moderator = await actor();
+  const { commentId, reportId } = await fixture();
+  await env.DB.exec(
+    "CREATE TRIGGER fail_moderation_audit BEFORE INSERT ON audit_log BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;",
+  );
+  try {
+    await expect(
+      hideComment(db, moderator, { id: commentId, reason: "Decisão de teste" }),
+    ).rejects.toThrow();
+    const [comment] = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, commentId));
+    const [report] = await db
+      .select()
+      .from(reports)
+      .where(eq(reports.id, reportId));
+    expect(comment?.status).toBe("visible");
+    expect(report?.status).toBe("open");
+  } finally {
+    await env.DB.exec("DROP TRIGGER fail_moderation_audit;");
+  }
+});
+
+test("fila ordena denúncias antigas primeiro e não inclui resolvidas", async () => {
+  const moderator = await actor();
+  const first = await fixture();
+  const second = await fixture();
+  await db
+    .update(reports)
+    .set({ createdAt: new Date(1) })
+    .where(eq(reports.id, first.reportId));
+  await db
+    .update(reports)
+    .set({ createdAt: new Date(2) })
+    .where(eq(reports.id, second.reportId));
+  const queue = (await listModeration(db, moderator)).queue;
+  expect(queue[0]?.id).toBe(first.reportId);
+  expect(queue[1]?.id).toBe(second.reportId);
+  await resolveReport(db, moderator, {
+    id: first.reportId,
+    reason: "Encerrada após análise",
+  });
+  expect(
+    (await listModeration(db, moderator)).queue.some(
+      (report) => report.id === first.reportId,
+    ),
+  ).toBe(false);
+});
+
+test("formulário aceita false literal sem converter em suspensão verdadeira", async () => {
+  const moderator = await actor();
+  const fan = await actor("torcedor");
+  await setUserSuspended(db, moderator, {
+    id: fan.uid,
+    suspended: "false",
+    reason: "Conta liberada",
+  });
+  const [user] = await db.select().from(users).where(eq(users.id, fan.uid));
+  expect(user?.status).toBe("active");
+  await expect(
+    setWritingClosed(db, moderator, {
+      closed: "invalid",
+      reason: "Valor inválido",
+    }),
+  ).rejects.toThrow();
 });
