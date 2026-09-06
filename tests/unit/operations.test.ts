@@ -23,7 +23,9 @@ test("restore refuses a missing backup", () => {
 });
 
 test.each([
-  ["preview", "ok", "200", "200", 0],
+  ["development", "ok", "200", "200", 0],
+  ["preview", "ok", "200", "404", 0],
+  ["preview", "ok", "200", "200", 1],
   ["production", "ok", "200", "404", 0],
   ["production", "ok", "200", "200", 1],
   ["preview", "error", "200", "404", 1],
@@ -36,10 +38,15 @@ test.each([
       writeFileSync(
         join(directory, "curl"),
         `#!/bin/sh
-for arg in "$@"; do url="$arg"; done
+method=GET
+for arg in "$@"; do
+  [ "$arg" != POST ] || method=POST
+  url="$arg"
+done
 case "$url" in
   */api/health) printf '%s' '{"ok":true,"db":"${db}","env":"${environment}"}' ;;
-  */dev/mailbox|*/dev-login) printf '%s' '${dev}' ;;
+  */dev/mailbox) [ "$method" = GET ] && printf '%s' '${dev}' ;;
+  */auth/dev-login) [ "$method" = POST ] && printf '%s' '${dev}' ;;
   *) printf '%s' '${pages}' ;;
 esac
 `,

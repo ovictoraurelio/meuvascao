@@ -71,7 +71,6 @@ try {
         cwd: workspace,
         env: {
           PATH: process.env.PATH,
-          HOME: workspace,
           WRANGLER_SEND_METRICS: "false",
         },
         encoding: "utf8",

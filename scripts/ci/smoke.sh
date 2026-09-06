@@ -20,11 +20,11 @@ while [ "$attempt" -le 10 ]; do
       status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base$path" 2>/dev/null || true)
       [ "$status" = 200 ] || valid=false
     done
-    if [ "$expected" = production ]; then
-      for path in /dev/mailbox /dev-login; do
-        status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base$path" 2>/dev/null || true)
-        [ "$status" = 404 ] || valid=false
-      done
+    if [ "$expected" != development ]; then
+      status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base/dev/mailbox" 2>/dev/null || true)
+      [ "$status" = 404 ] || valid=false
+      status=$(curl -sS -X POST -o /dev/null -w '%{http_code}' --max-time 15 "$base/auth/dev-login" 2>/dev/null || true)
+      [ "$status" = 404 ] || valid=false
     fi
     if [ "$valid" = true ]; then
       echo "Sonda aprovada: saúde, D1 e páginas públicas ($expected)."

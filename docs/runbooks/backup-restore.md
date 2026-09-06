@@ -27,4 +27,4 @@ RPO de 24 horas e RTO de 4 horas são **metas ainda não validadas remotamente**
 sh scripts/ci/smoke.sh http://localhost:4321 development
 ```
 
-A sonda exige `/api/health` com `ok: true`, `db: "ok"` e ambiente correto, além de HTTP 200 em `/` e `/jogos`. Em produção exige também HTTP 404 em `/dev/mailbox` e `/dev-login`. Redirecionamentos não contam como sucesso. Tenta até dez vezes, com intervalo de seis segundos, sem imprimir corpos de resposta.
+A sonda exige `/api/health` com `ok: true`, `db: "ok"` e ambiente correto, além de HTTP 200 em `/` e `/jogos`. Em preview e produção exige também HTTP 404 em `GET /dev/mailbox` e `POST /auth/dev-login`, pois as rotas de desenvolvimento só ficam disponíveis em development. Redirecionamentos não contam como sucesso. Tenta até dez vezes, com intervalo de seis segundos, sem imprimir corpos de resposta.
