@@ -14,6 +14,7 @@ import {
 import { DuplicateNicknameError } from "@/modules/identidade/users.repo";
 import {
   createSession,
+  findActiveSession,
   revokeSession,
 } from "@/modules/identidade/sessions.repo";
 import { createUser, setNickname } from "@/modules/identidade/users.repo";
@@ -173,9 +174,7 @@ describe("account.service: deleteOwnAccount / buildAccountExport", () => {
 
     await deleteOwnAccount(db, user.id);
 
-    // A sessão em si não foi revogada por deleteOwnAccount (isso é responsabilidade de quem
-    // chama, ver src/actions/index.ts) — mas o usuário já está status=deleted, o suficiente para
-    // getAuthenticatedUser recusar.
+    expect(await findActiveSession(db, "sessao-exclusao")).toBeNull();
     expect(
       await getAuthenticatedUser(db, {
         sid: "sessao-exclusao",
@@ -185,7 +184,7 @@ describe("account.service: deleteOwnAccount / buildAccountExport", () => {
     ).toBeNull();
   });
 
-  it("o export nunca inclui e-mail, hash de token ou HMAC de sessão", () => {
+  it("o export inclui e-mail próprio, mas nunca hashes ou HMAC", () => {
     const user = {
       id: "user-export",
       email: "nao-deveria-aparecer@example.com",
@@ -203,10 +202,11 @@ describe("account.service: deleteOwnAccount / buildAccountExport", () => {
     };
     const exported = buildAccountExport(user);
     expect(exported).toEqual({
+      email: "nao-deveria-aparecer@example.com",
       apelido: "Exportador",
       papel: "torcedor",
       criadaEm: "2026-01-01T00:00:00.000Z",
     });
-    expect(JSON.stringify(exported)).not.toMatch(/nao-deveria-aparecer/);
+    expect(Object.keys(exported)).not.toContain("emailNormalized");
   });
 });

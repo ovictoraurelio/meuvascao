@@ -28,16 +28,15 @@ describe("getTurnstileSiteKey", () => {
     expect(getTurnstileSiteKey()).toBe("chave-real-do-fundador");
   });
 
-  it("acusa em produção se a chave de teste for usada por falta de configuração", () => {
+  it.each([
+    undefined,
+    "1x00000000000000000000AA",
+    "2x00000000000000000000AB",
+    "3x00000000000000000000FF",
+  ])("não fornece chave de teste em produção: %s", (key) => {
     bindings.ENVIRONMENT = "production";
-    const errorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    expect(getTurnstileSiteKey()).toBe("1x00000000000000000000AA");
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("TURNSTILE_SITE_KEY"),
-    );
-    errorSpy.mockRestore();
+    bindings.TURNSTILE_SITE_KEY = key;
+    expect(getTurnstileSiteKey()).toBe("");
   });
 });
 
@@ -47,6 +46,24 @@ describe("verifyTurnstileToken", () => {
     bindings.TURNSTILE_SECRET_KEY = undefined;
     vi.stubGlobal("fetch", vi.fn());
   });
+
+  it.each([
+    undefined,
+    "1x0000000000000000000000000000000AA",
+    "2x0000000000000000000000000000000AA",
+    "3x0000000000000000000000000000000AA",
+  ])(
+    "bloqueia sem rede a configuração insegura em produção: %s",
+    async (key) => {
+      bindings.ENVIRONMENT = "production";
+      bindings.TURNSTILE_SECRET_KEY = key;
+      vi.mocked(fetch).mockResolvedValue(
+        new Response(JSON.stringify({ success: true })),
+      );
+      expect(await verifyTurnstileToken("token")).toBe(false);
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
 
   it("retorna falso sem chamar a rede quando o token está vazio", async () => {
     const fetchMock = vi.mocked(fetch);
