@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  uniqueIndex,
   index,
   sqliteTable,
   text,
@@ -215,5 +216,80 @@ export const auditLog = sqliteTable(
       table.createdAt,
     ),
     index("audit_log_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const threads = sqliteTable("threads", {
+  id: text("id").primaryKey(),
+  matchId: text("match_id").notNull().unique(),
+  status: text("status", { enum: ["open", "closed"] })
+    .notNull()
+    .default("open"),
+  slowModeSeconds: integer("slow_mode_seconds").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+export const comments = sqliteTable(
+  "comments",
+  {
+    id: text("id").primaryKey(),
+    threadId: text("thread_id").notNull(),
+    authorId: text("author_id").notNull(),
+    parentId: text("parent_id"),
+    body: text("body").notNull(),
+    status: text("status", { enum: ["visible", "hidden", "deleted"] })
+      .notNull()
+      .default("visible"),
+    likeCount: integer("like_count").notNull().default(0),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("comments_author_key_idx").on(
+      table.authorId,
+      table.idempotencyKey,
+    ),
+    index("comments_thread_cursor_idx").on(
+      table.threadId,
+      table.createdAt,
+      table.id,
+    ),
+    index("comments_author_created_idx").on(table.authorId, table.createdAt),
+  ],
+);
+export const reactions = sqliteTable(
+  "reactions",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id").notNull(),
+    userId: text("user_id").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("reactions_comment_user_idx").on(table.commentId, table.userId),
+  ],
+);
+export const reports = sqliteTable(
+  "reports",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id").notNull(),
+    reporterId: text("reporter_id").notNull(),
+    reason: text("reason").notNull(),
+    status: text("status", { enum: ["open", "resolved"] })
+      .notNull()
+      .default("open"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
+    resolvedBy: text("resolved_by"),
+  },
+  (table) => [
+    uniqueIndex("reports_comment_reporter_idx").on(
+      table.commentId,
+      table.reporterId,
+    ),
+    index("reports_status_created_idx").on(table.status, table.createdAt),
   ],
 );
