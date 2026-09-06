@@ -32,7 +32,7 @@ test.describe("F10: Institucionais, SEO e descoberta", () => {
       await expect(page.getByText(/versão \d{4}-\d{2}-\d{2}/i)).toBeVisible();
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
-      ).toBeLessThanOrEqual(page.viewportSize()!.width);
+      ).toBeLessThanOrEqual(page.viewportSize()?.width ?? 360);
       const result = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
         .analyze();
@@ -51,3 +51,20 @@ test.describe("F10: Institucionais, SEO e descoberta", () => {
     ).toHaveAttribute("href", "/privacidade");
   });
 });
+
+for (const route of ["/", "/jogos/vasco-x-adversario-seed", "/resenha"]) {
+  test(`${route} tem imagem Open Graph utilizável`, async ({
+    page,
+    request,
+  }) => {
+    await page.goto(route);
+    for (const property of ["og:title", "og:description", "og:image"]) {
+      await expect(
+        page.locator(`meta[property="${property}"]`),
+      ).toHaveAttribute("content", /.+/);
+    }
+    const response = await request.get("/brand/og-default.png");
+    expect(response.ok()).toBe(true);
+    expect(response.headers()["content-type"]).toContain("image/png");
+  });
+}

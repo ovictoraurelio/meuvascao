@@ -1,0 +1,39 @@
+---
+import { getEntry, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+const allowed = new Set(["sobre", "regras-da-resenha", "privacidade"]);
+const slug = Astro.params.slug ?? "";
+const entry = allowed.has(slug) ? await getEntry("paginas", slug) : undefined;
+if (!entry) return new Response("Página não encontrada", { status: 404 });
+const { Content } = await render(entry);
+---
+
+<Base
+  title={`${entry.data.title} — Meu Vascão`}
+  description={entry.data.description}
+>
+  <article class="institucional">
+    <h1>{entry.data.title}</h1>
+    <p class="versao">Versão {entry.data.version}</p>
+    <Content />
+  </article>
+</Base>
+<style is:global>
+  .institucional {
+    max-inline-size: 48rem;
+    margin-inline: auto;
+    padding: var(--space-4);
+    overflow-wrap: anywhere;
+  }
+
+  .versao {
+    color: var(--color-ink-muted);
+    font-size: var(--type-sm);
+  }
+
+  .institucional p,
+  .institucional h2 {
+    margin-block: var(--space-4);
+  }
+</style>
