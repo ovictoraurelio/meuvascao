@@ -4,15 +4,15 @@ import { buildMatchSlug } from "@/modules/partidas/slug";
 
 describe("buildMatchSlug", () => {
   it("monta um slug kebab-case a partir do adversário e do id", () => {
-    expect(buildMatchSlug("Flamengo", "4f8a2b10-0000-0000-0000-000000000000")).toBe(
-      "vasco-x-flamengo-4f8a2b",
-    );
+    expect(
+      buildMatchSlug("Flamengo", "4f8a2b10-0000-0000-0000-000000000000"),
+    ).toBe("vasco-x-flamengo-4f8a2b");
   });
 
   it("remove acentos e caracteres fora de a-z0-9", () => {
-    expect(buildMatchSlug("São Paulo", "abcdef00-0000-0000-0000-000000000000")).toBe(
-      "vasco-x-sao-paulo-abcdef",
-    );
+    expect(
+      buildMatchSlug("São Paulo", "abcdef00-0000-0000-0000-000000000000"),
+    ).toBe("vasco-x-sao-paulo-abcdef");
   });
 
   it("permanece igual depois de editar o horário do jogo (não depende de kickoff_at)", () => {
@@ -25,8 +25,14 @@ describe("buildMatchSlug", () => {
   });
 
   it("dois jogos contra o mesmo adversário (ida e volta) recebem slugs diferentes", () => {
-    const ida = buildMatchSlug("Fluminense", "aaaa1111-0000-0000-0000-000000000000");
-    const volta = buildMatchSlug("Fluminense", "bbbb2222-0000-0000-0000-000000000000");
+    const ida = buildMatchSlug(
+      "Fluminense",
+      "aaaa1111-0000-0000-0000-000000000000",
+    );
+    const volta = buildMatchSlug(
+      "Fluminense",
+      "bbbb2222-0000-0000-0000-000000000000",
+    );
     expect(ida).not.toBe(volta);
   });
 });

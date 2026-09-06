@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { check, index, sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import {
+  check,
+  index,
+  sqliteTable,
+  text,
+  integer,
+} from "drizzle-orm/sqlite-core";
 
 // Esquema Drizzle do Meu Vascão (dialeto SQLite/D1), migração 0001_fundacao.
 //

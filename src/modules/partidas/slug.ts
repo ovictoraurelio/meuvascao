@@ -3,13 +3,15 @@
 // mesma competição (ida e volta, por exemplo) recebem sufixos diferentes porque cada um tem um id
 // próprio.
 function slugifyOpponent(opponentName: string): string {
-  return opponentName
-    .normalize("NFKD")
-    // Marcas diacríticas combinantes que a normalização NFKD separou (ex.: "ã" -> "a" + til).
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return (
+    opponentName
+      .normalize("NFKD")
+      // Marcas diacríticas combinantes que a normalização NFKD separou (ex.: "ã" -> "a" + til).
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
 }
 
 export function buildMatchSlug(opponentName: string, matchId: string): string {
