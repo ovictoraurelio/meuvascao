@@ -2,7 +2,14 @@ import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { expect, it, vi } from "vitest";
 import { getDb } from "@/lib/db/client";
-import { comments, threads, users, settings, reactions } from "@/lib/db/schema";
+import {
+  comments,
+  threads,
+  users,
+  settings,
+  reactions,
+  matches,
+} from "@/lib/db/schema";
 import { createUser } from "@/modules/identidade/users.repo";
 import { createSession } from "@/modules/identidade/sessions.repo";
 import { createMatch } from "@/modules/partidas";
@@ -136,17 +143,22 @@ it("suspensão, fechamento e kill switch bloqueiam todas as escritas", async () 
     .update(threads)
     .set({ status: "open" })
     .where(eq(threads.matchId, game.id));
-  await db
-    .insert(settings)
-    .values({
-      key: "escrita_fechada",
-      valueJson: "true",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  await db.insert(settings).values({
+    key: "escrita_fechada",
+    valueJson: "true",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   await expect(comment(db, session, input(game.id))).rejects.toBeInstanceOf(
     CommunityError,
   );
+  await expect(like(db, session, item.id)).rejects.toBeInstanceOf(
+    CommunityError,
+  );
+  await report(db, session, {
+    commentId: item.id,
+    reason: "Abuso durante pausa",
+  });
   await db.delete(settings).where(eq(settings.key, "escrita_fechada"));
 });
 it("modo lento limita concorrência por autor e devolve retryAfter", async () => {
@@ -184,4 +196,44 @@ it("ocultos nunca expõem texto em leitura pública e cursor não duplica", asyn
   const page = await listComments(db, game.id);
   expect(JSON.stringify(page)).not.toContain("texto privado moderado");
   expect(page.items[0]?.body).toContain("ocultado");
+});
+
+it("cursor de 30 itens desempata timestamps iguais sem repetir ou perder", async () => {
+  const game = await match();
+  const session = await actor();
+  const first = await comment(db, session, input(game.id));
+  const now = new Date(Date.now() + 1000);
+  for (let i = 0; i < 30; i++)
+    await db.insert(comments).values({
+      id: crypto.randomUUID(),
+      threadId: first.threadId,
+      authorId: session.uid,
+      body: `Mensagem ${i}`,
+      idempotencyKey: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    });
+  const a = await listComments(db, game.id);
+  expect(a.items).toHaveLength(30);
+  expect(a.nextCursor).toBeTruthy();
+  const b = await listComments(db, game.id, a.nextCursor);
+  expect(b.items).toHaveLength(1);
+  expect(new Set([...a.items, ...b.items].map((row) => row.id)).size).toBe(31);
+});
+
+it("partida excluída não expõe comentários nem aceita novas escritas", async () => {
+  const game = await match();
+  const session = await actor();
+  const item = await comment(db, session, input(game.id));
+  await db
+    .update(matches)
+    .set({ deletedAt: new Date() })
+    .where(eq(matches.id, game.id));
+  expect((await listComments(db, game.id)).items).toEqual([]);
+  await expect(comment(db, session, input(game.id))).rejects.toBeInstanceOf(
+    CommunityError,
+  );
+  await expect(
+    report(db, session, { commentId: item.id, reason: "Teste" }),
+  ).rejects.toBeInstanceOf(CommunityError);
 });
