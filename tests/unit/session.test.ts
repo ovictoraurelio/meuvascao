@@ -84,4 +84,23 @@ describe("buildSessionCookieValue / verifySessionCookieValue", () => {
       SessionSecretMissingError,
     );
   });
+  it.each(["preview", "production"])(
+    "%s sem segredo rejeita cookie sem impedir leitura pública",
+    async (environment) => {
+      const forgedWithPublicSecret = await buildSessionCookieValue(
+        "sid-1",
+        "uid-1",
+      );
+      bindings.ENVIRONMENT = environment;
+      await expect(
+        verifySessionCookieValue(forgedWithPublicSecret),
+      ).resolves.toBeNull();
+      await expect(
+        verifySessionCookieValue("arbitrary.signature"),
+      ).resolves.toBeNull();
+      await expect(buildSessionCookieValue("sid-1", "uid-1")).rejects.toThrow(
+        SessionSecretMissingError,
+      );
+    },
+  );
 });
