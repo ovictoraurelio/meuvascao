@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
 
 test("backup refuses missing arguments without touching a database", () => {
@@ -20,9 +22,44 @@ test("restore refuses a missing backup", () => {
   expect(result.stderr).toContain("Backup inexistente");
 });
 
-test("operational smoke requires D1 and public pages; dev endpoints only in production", () => {
-  const script = readFileSync("scripts/ci/smoke.sh", "utf8");
-  expect(script).toContain('j.db === "ok"');
-  expect(script).toContain("for path in / /jogos");
-  expect(script).toContain('[ "$expected" = production ]');
-});
+test.each([
+  ["preview", "ok", "200", "200", 0],
+  ["production", "ok", "200", "404", 0],
+  ["production", "ok", "200", "200", 1],
+  ["preview", "error", "200", "404", 1],
+  ["preview", "ok", "500", "404", 1],
+])(
+  "smoke %s db=%s pages=%s dev=%s returns %i",
+  (environment, db, pages, dev, expected) => {
+    const directory = mkdtempSync(join(tmpdir(), "smoke-test-"));
+    try {
+      writeFileSync(
+        join(directory, "curl"),
+        `#!/bin/sh
+for arg in "$@"; do url="$arg"; done
+case "$url" in
+  */api/health) printf '%s' '{"ok":true,"db":"${db}","env":"${environment}"}' ;;
+  */dev/mailbox|*/dev-login) printf '%s' '${dev}' ;;
+  *) printf '%s' '${pages}' ;;
+esac
+`,
+        { mode: 0o700 },
+      );
+      // Falhas encerram na primeira espera para manter o teste rápido.
+      writeFileSync(join(directory, "sleep"), "#!/bin/sh\nexit 1\n", {
+        mode: 0o700,
+      });
+      const result = spawnSync(
+        "sh",
+        ["scripts/ci/smoke.sh", "https://example.test", environment],
+        {
+          encoding: "utf8",
+          env: { ...process.env, PATH: `${directory}:${process.env.PATH}` },
+        },
+      );
+      expect(result.status).toBe(expected);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
