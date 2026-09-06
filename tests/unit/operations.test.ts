@@ -39,14 +39,18 @@ test.each([
         join(directory, "curl"),
         `#!/bin/sh
 method=GET
+origin=false
+content_type=false
 for arg in "$@"; do
   [ "$arg" != POST ] || method=POST
+  [ "$arg" != "Origin: https://example.test" ] || origin=true
+  [ "$arg" != "Content-Type: application/x-www-form-urlencoded" ] || content_type=true
   url="$arg"
 done
 case "$url" in
   */api/health) printf '%s' '{"ok":true,"db":"${db}","env":"${environment}"}' ;;
   */dev/mailbox) [ "$method" = GET ] && printf '%s' '${dev}' ;;
-  */auth/dev-login) [ "$method" = POST ] && printf '%s' '${dev}' ;;
+  */auth/dev-login) [ "$method" = POST ] && [ "$origin" = true ] && [ "$content_type" = true ] && printf '%s' '${dev}' ;;
   *) printf '%s' '${pages}' ;;
 esac
 `,

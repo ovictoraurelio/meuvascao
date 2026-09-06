@@ -23,7 +23,7 @@ while [ "$attempt" -le 10 ]; do
     if [ "$expected" != development ]; then
       status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base/dev/mailbox" 2>/dev/null || true)
       [ "$status" = 404 ] || valid=false
-      status=$(curl -sS -X POST -o /dev/null -w '%{http_code}' --max-time 15 "$base/auth/dev-login" 2>/dev/null || true)
+      status=$(curl -sS -X POST -H "Origin: $base" -H "Content-Type: application/x-www-form-urlencoded" -o /dev/null -w '%{http_code}' --max-time 15 "$base/auth/dev-login" 2>/dev/null || true)
       [ "$status" = 404 ] || valid=false
     fi
     if [ "$valid" = true ]; then
