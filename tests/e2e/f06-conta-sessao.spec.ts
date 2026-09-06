@@ -173,6 +173,29 @@ test.describe("F6: Conta e sessão", () => {
     expect(serialized).not.toMatch(/token_hash|session.*hmac|password/i);
   });
 
+  test("cookie revogado não encerra sessões abertas depois", async ({
+    page,
+    context,
+  }, testInfo) => {
+    const email = `revogado-${testInfo.project.name}-${Date.now()}@example.com`;
+    await entrarComApelidoNovo(page, email, `Revogado${Date.now()}`);
+    const oldCookies = await context.cookies();
+    await page.getByRole("button", { name: "Sair", exact: true }).click();
+    await page.goto("/entrar");
+    await page.getByLabel("E-mail").fill(email);
+    await page.getByRole("button", { name: "Enviar link de acesso" }).click();
+    await abrirLinkDoDevMailbox(page, email);
+    await expect(page).toHaveURL(/\/perfil/);
+    const currentCookies = await context.cookies();
+    await context.clearCookies();
+    await context.addCookies(oldCookies);
+    await page.request.post("/auth/logout", { form: { escopo: "todos" } });
+    await context.clearCookies();
+    await context.addCookies(currentCookies);
+    await page.goto("/perfil");
+    await expect(page).toHaveURL(/\/perfil/);
+  });
+
   test("logout exige Origin confiável (proteção CSRF)", async ({ request }) => {
     const res = await request.post("/auth/logout", {
       headers: { Origin: "https://evil.example" },

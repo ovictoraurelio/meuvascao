@@ -78,3 +78,45 @@ describe("tokens.repo", () => {
     expect(await countRecentTokensByIpHash(db, "ip-hash-a", since)).toBe(4);
   });
 });
+
+describe("reserva de envio concorrente", () => {
+  it("respeita três tokens por e-mail mesmo com dez pedidos simultâneos", async () => {
+    const { reserveAuthToken } =
+      await import("@/modules/identidade/tokens.repo");
+    const db = getDb(env.DB);
+    const results = await Promise.all(
+      Array.from({ length: 10 }, (_, i) =>
+        reserveAuthToken(
+          db,
+          {
+            emailNormalized: "limite-concorrente@example.com",
+            tokenHash: `reserva-${i}`,
+            expiresAt: new Date(Date.now() + 60000),
+          },
+          false,
+        ),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(3);
+  });
+  it("respeita dez tokens por IP entre e-mails diferentes", async () => {
+    const { reserveAuthToken } =
+      await import("@/modules/identidade/tokens.repo");
+    const db = getDb(env.DB);
+    const results = await Promise.all(
+      Array.from({ length: 15 }, (_, i) =>
+        reserveAuthToken(
+          db,
+          {
+            emailNormalized: `limite-ip-${i}@example.com`,
+            tokenHash: `reserva-ip-${i}`,
+            ipHash: "mesmo-ip-concorrente",
+            expiresAt: new Date(Date.now() + 60000),
+          },
+          true,
+        ),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(10);
+  });
+});
