@@ -6,25 +6,17 @@ import "../styles/tokens.css";
 import "../styles/reset.css";
 import "../styles/base.css";
 
+import { NAV, type NavKey } from "@/lib/nav";
 import Meta from "../components/seo/Meta.astro";
 import Faixa from "../components/ui/Faixa.astro";
 
 interface Props {
   title: string;
   description: string;
-  active?: "inicio" | "jogos" | "resenha" | "perfil";
+  active?: NavKey;
 }
 
 const { title, description, active } = Astro.props;
-
-// Barra inferior (docs/02:29): quatro destinos fixos na v1. Notícias entra pela home; busca fica
-// para quando o acervo justificar (docs/02:29) — nenhum dos dois ganha item aqui.
-const NAV = [
-  { key: "inicio", href: "/", label: "Início" },
-  { key: "jogos", href: "/jogos", label: "Jogos" },
-  { key: "resenha", href: "/resenha", label: "Resenha" },
-  { key: "perfil", href: "/perfil", label: "Perfil" },
-] as const;
 ---
 
 <!doctype html>
@@ -37,6 +29,10 @@ const NAV = [
       Portal independente, feito por torcedores. Sem vínculo oficial com o Club
       de Regatas Vasco da Gama.
     </p>
+    <a href="/" class="marca">
+      <img src="/brand/simbolo.svg" alt="" width="28" height="28" />
+      <span>Meu Vascão</span>
+    </a>
     <Faixa />
     <main>
       <slot />
@@ -76,6 +72,22 @@ const NAV = [
     background-color: var(--color-paper);
   }
 
+  .marca {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    justify-content: center;
+    padding-block: var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--type-lg);
+    font-weight: var(--font-display-weight);
+    color: var(--color-ink);
+  }
+
+  .marca:hover {
+    text-decoration: none;
+  }
+
   main {
     flex: 1;
     padding-block-end: var(--space-8);
@@ -85,7 +97,7 @@ const NAV = [
     position: sticky;
     inset-block-end: 0;
     background-color: var(--color-ink);
-    border-block-start: 1px solid var(--color-ink);
+    border-block-start: 1px solid var(--color-accent);
   }
 
   .barra-inferior ul {

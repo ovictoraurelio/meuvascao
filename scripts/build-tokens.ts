@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { readTokens, type Tokens } from "./tokens-schema.ts";
+import { isMainModule, readTokens, type Tokens } from "./tokens-schema.ts";
 
 const HEADER = `/* Gerado por scripts/build-tokens.ts a partir de design/tokens.json. Não editar à mão: rode
    \`npm run tokens:build\` depois de mudar o JSON. A CI falha se este arquivo divergir do gerado. */`;
@@ -64,6 +64,6 @@ function main(): void {
   );
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main();
 }

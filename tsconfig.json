@@ -2,6 +2,11 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "noUncheckedIndexedAccess": true,
+    // scripts/*.ts runs directly via `node --experimental-strip-types`, which only understands
+    // erasable syntax (no enums, no parameter properties, no namespaces): this option makes a
+    // violation a normal `astro check`/tsc error instead of a confusing runtime SyntaxError from
+    // Node the first time someone actually runs the script.
+    "erasableSyntaxOnly": true,
     "types": ["@cloudflare/vitest-pool-workers/types"],
     "paths": {
       "@/*": ["./src/*"]

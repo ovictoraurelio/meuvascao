@@ -1,25 +1,13 @@
 ---
-import Base from "../layouts/Base.astro";
+import EstadoVazio from "../layouts/EstadoVazio.astro";
 ---
 
-<Base
+<EstadoVazio
   title="Página não encontrada — Meu Vascão"
   description="A página que você procura não existe ou foi movida."
+  heading="Página não encontrada"
+  message="O endereço não existe ou a página foi movida."
+  centered
 >
-  <div class="estado">
-    <h1>Página não encontrada</h1>
-    <p>O endereço não existe ou a página foi movida.</p>
-    <a href="/">Voltar para a home</a>
-  </div>
-</Base>
-
-<style>
-  .estado {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-8) var(--space-4);
-    text-align: center;
-  }
-</style>
+  <a href="/">Voltar para a home</a>
+</EstadoVazio>

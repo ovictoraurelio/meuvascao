@@ -17,23 +17,25 @@ const { variant = "acento" } = Astro.props;
 
 <style>
   .faixa {
+    /* Ângulo e ponto de corte da diagonal: uma só definição para as duas variantes, que só trocam
+       a ordem das duas cores. */
+    --faixa-angulo: 100deg;
+    --faixa-corte: 60%;
+    --faixa-cor-a: var(--color-accent);
+    --faixa-cor-b: var(--color-ink);
+
     block-size: var(--space-2);
     background: linear-gradient(
-      100deg,
-      var(--color-accent) 0%,
-      var(--color-accent) 60%,
-      var(--color-ink) 60%,
-      var(--color-ink) 100%
+      var(--faixa-angulo),
+      var(--faixa-cor-a) 0%,
+      var(--faixa-cor-a) var(--faixa-corte),
+      var(--faixa-cor-b) var(--faixa-corte),
+      var(--faixa-cor-b) 100%
     );
   }
 
   .faixa.escura {
-    background: linear-gradient(
-      100deg,
-      var(--color-ink) 0%,
-      var(--color-ink) 60%,
-      var(--color-accent) 60%,
-      var(--color-accent) 100%
-    );
+    --faixa-cor-a: var(--color-ink);
+    --faixa-cor-b: var(--color-accent);
   }
 </style>

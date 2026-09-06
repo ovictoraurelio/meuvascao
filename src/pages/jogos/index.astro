@@ -1,23 +1,11 @@
 ---
-import Base from "../../layouts/Base.astro";
+import EstadoVazio from "../../layouts/EstadoVazio.astro";
 ---
 
-<Base
+<EstadoVazio
   title="Jogos — Meu Vascão"
   description="Agenda e resultados do Vasco."
   active="jogos"
->
-  <div class="estado">
-    <h1>Jogos</h1>
-    <p>Em construção. A agenda de jogos chega na próxima fatia.</p>
-  </div>
-</Base>
-
-<style>
-  .estado {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-6) var(--space-4);
-  }
-</style>
+  heading="Jogos"
+  message="Em construção. A agenda de jogos chega na próxima fatia."
+/>

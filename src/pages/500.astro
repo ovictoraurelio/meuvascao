@@ -1,25 +1,13 @@
 ---
-import Base from "../layouts/Base.astro";
+import EstadoVazio from "../layouts/EstadoVazio.astro";
 ---
 
-<Base
+<EstadoVazio
   title="Erro no servidor — Meu Vascão"
   description="Algo deu errado do nosso lado. Tente novamente em instantes."
+  heading="Algo deu errado"
+  message="Foi um erro do nosso lado, não seu. Tente novamente em instantes."
+  centered
 >
-  <div class="estado">
-    <h1>Algo deu errado</h1>
-    <p>Foi um erro do nosso lado, não seu. Tente novamente em instantes.</p>
-    <a href="/">Voltar para a home</a>
-  </div>
-</Base>
-
-<style>
-  .estado {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-8) var(--space-4);
-    text-align: center;
-  }
-</style>
+  <a href="/">Voltar para a home</a>
+</EstadoVazio>

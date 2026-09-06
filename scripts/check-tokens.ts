@@ -1,5 +1,5 @@
 import { checkPairs, type ContrastPair } from "../src/lib/color/contrast.ts";
-import { readTokens, type Tokens } from "./tokens-schema.ts";
+import { isMainModule, readTokens, type Tokens } from "./tokens-schema.ts";
 
 /** Troca os nomes de cor de `contrastPairs` pelos hex declarados em `color`. */
 export function resolveContrastPairs(tokens: Tokens): ContrastPair[] {
@@ -41,6 +41,6 @@ function main(): void {
   );
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main();
 }
