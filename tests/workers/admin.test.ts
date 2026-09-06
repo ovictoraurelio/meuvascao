@@ -110,6 +110,9 @@ describe("administração autorizada e auditada", () => {
       saveMatch(db, editor, { ...game, status: "encerrado" }),
     ).rejects.toThrow();
     await expect(
+      saveMatch(db, editor, { ...game, kickoffAt: "2026-02-31T20:00" }),
+    ).rejects.toThrow();
+    await expect(
       saveLink(db, editor, { ...link, url: "javascript:alert(1)" }),
     ).rejects.toThrow();
   });
