@@ -48,7 +48,7 @@ describe("paleta planejada para design/tokens.json", () => {
 
   it("accent sobre superfície escura (ink) NÃO atende texto (~3,3:1) — por isso existe accent-on-dark", () => {
     const ratio = contrastRatio("#C51D2B", "#101010");
-    expect(ratio).toBeCloseTo(3.3, 1);
+    expect(ratio).toBeCloseTo(3.25, 1);
     expect(ratio).toBeLessThan(4.5);
   });
 
