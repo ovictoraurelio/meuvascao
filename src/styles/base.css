@@ -1,0 +1,47 @@
+/* Tipografia e cor de base. Todo componente parte daqui em vez de repetir font-family/cor. */
+
+html {
+  font-family: var(--font-body);
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--type-base);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: var(--font-display-weight);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--type-3xl);
+}
+
+h2 {
+  font-size: var(--type-2xl);
+}
+
+h3 {
+  font-size: var(--type-xl);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

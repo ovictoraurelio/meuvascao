@@ -1,0 +1,39 @@
+---
+// Faixa diagonal (docs/02): recurso de composição da marca, puramente decorativo — sem texto, sem
+// papel interativo. `aria-hidden` porque não carrega nenhuma informação que não esteja já no
+// conteúdo ao redor.
+interface Props {
+  variant?: "acento" | "escura";
+}
+
+const { variant = "acento" } = Astro.props;
+---
+
+<div
+  class:list={["faixa", { escura: variant === "escura" }]}
+  aria-hidden="true"
+>
+</div>
+
+<style>
+  .faixa {
+    block-size: var(--space-2);
+    background: linear-gradient(
+      100deg,
+      var(--color-accent) 0%,
+      var(--color-accent) 60%,
+      var(--color-ink) 60%,
+      var(--color-ink) 100%
+    );
+  }
+
+  .faixa.escura {
+    background: linear-gradient(
+      100deg,
+      var(--color-ink) 0%,
+      var(--color-ink) 60%,
+      var(--color-accent) 60%,
+      var(--color-accent) 100%
+    );
+  }
+</style>

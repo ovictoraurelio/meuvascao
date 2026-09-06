@@ -1,0 +1,119 @@
+---
+import "@fontsource-variable/dm-sans/wght.css";
+import "@fontsource/barlow-condensed/latin-700.css";
+import "@fontsource/barlow-condensed/latin-ext-700.css";
+import "../styles/tokens.css";
+import "../styles/reset.css";
+import "../styles/base.css";
+
+import Meta from "../components/seo/Meta.astro";
+import Faixa from "../components/ui/Faixa.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  active?: "inicio" | "jogos" | "resenha" | "perfil";
+}
+
+const { title, description, active } = Astro.props;
+
+// Barra inferior (docs/02:29): quatro destinos fixos na v1. Notícias entra pela home; busca fica
+// para quando o acervo justificar (docs/02:29) — nenhum dos dois ganha item aqui.
+const NAV = [
+  { key: "inicio", href: "/", label: "Início" },
+  { key: "jogos", href: "/jogos", label: "Jogos" },
+  { key: "resenha", href: "/resenha", label: "Resenha" },
+  { key: "perfil", href: "/perfil", label: "Perfil" },
+] as const;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <Meta title={title} description={description} />
+  </head>
+  <body>
+    <p class="disclaimer">
+      Portal independente, feito por torcedores. Sem vínculo oficial com o Club
+      de Regatas Vasco da Gama.
+    </p>
+    <Faixa />
+    <main>
+      <slot />
+    </main>
+    <nav class="barra-inferior" aria-label="Navegação principal">
+      <ul>
+        {
+          NAV.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={active === item.key ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </body>
+</html>
+
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100vh;
+  }
+
+  /* Legível no topo mobile (docs/02:9): não é letra miúda de rodapé. */
+  .disclaimer {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+    text-align: center;
+    background-color: var(--color-paper);
+  }
+
+  main {
+    flex: 1;
+    padding-block-end: var(--space-8);
+  }
+
+  .barra-inferior {
+    position: sticky;
+    inset-block-end: 0;
+    background-color: var(--color-ink);
+    border-block-start: 1px solid var(--color-ink);
+  }
+
+  .barra-inferior ul {
+    display: flex;
+  }
+
+  .barra-inferior li {
+    flex: 1;
+  }
+
+  .barra-inferior a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-2);
+    font-size: var(--type-sm);
+    color: var(--color-paper-muted);
+    text-align: center;
+  }
+
+  .barra-inferior a:hover {
+    color: var(--color-paper);
+    text-decoration: none;
+  }
+
+  .barra-inferior a[aria-current="page"] {
+    color: var(--color-paper);
+    font-weight: var(--font-display-weight);
+  }
+</style>
