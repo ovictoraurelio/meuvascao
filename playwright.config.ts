@@ -16,6 +16,10 @@ const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
+  // O proxy local do Wrangler encerra intermitentemente sob jornadas paralelas
+  // (também reproduzido no CI). Um executor mantém a suíte integral estável;
+  // concorrência de escrita continua testada explicitamente nos testes D1.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
