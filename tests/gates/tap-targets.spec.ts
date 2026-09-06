@@ -36,7 +36,9 @@ test("alvos de toque têm ao menos 44 px em 360 px", async ({
       // positivo, não o que o gate existe para pegar.
       if (rect.width === 0 || rect.height === 0) continue;
       const min = Math.min(rect.width, rect.height);
-      if (min >= 44) continue;
+      // Tolerância de meio pixel: arredondamento de DPR pode reportar 43.98px para um elemento
+      // autorado em 44px exatos; não é isso que o gate existe para pegar.
+      if (min >= 44 - 0.5) continue;
       const reason = el.dataset.allowSmallTarget;
       if (reason) {
         escaped.push(`${el.tagName.toLowerCase()}: ${reason}`);

@@ -10,7 +10,9 @@ test.describe.fixme("F4: Home + captura", () => {
     await page.goto("/");
     const html = await page.content();
     // Nenhuma contagem (respostas, curtidas, torcedores) aparece sem um dado real por trás.
-    expect(html).not.toMatch(/\d+\s+(respostas?|curtidas?|torcedores?)/i);
+    expect(html).not.toMatch(
+      /\d+\s+(respostas?|curtidas?|reaç(ão|ões)|coment[aá]rios?|torcedores?|seguidores?|visualizaç(ão|ões))/i,
+    );
     await expect(page.getByText(/ainda não há/i)).toBeVisible();
   });
 
