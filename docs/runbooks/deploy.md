@@ -95,3 +95,9 @@ Antes do **primeiro** deploy em produção, cumprir o checklist da fatia F12 no 
 | Erro de zona ou rota no deploy de produção | Domínio ainda não é zona na Cloudflare         | Migrar o DNS para a Cloudflare e repetir                                           |
 | Sonda falha após deploy                    | Worker publicado com erro ou banco inacessível | Ver logs em Workers → `meuvascao` → Logs; `npx wrangler rollback --env production` |
 | Job de PR não roda                         | PR vem de fork                                 | Esperado: forks não têm segredos; abra a branch no próprio repositório             |
+
+## Marco de 06/09/2026: leitura publicada
+
+A esteira Vuca publicou o recorte de leitura em `https://meuvascao.com`, via PR14 e workflow `34050096004`, com autorização explícita do fundador e proteção do Environment preservada. Cadastros seguem fechados por padrão (`PUBLIC_SIGNUPS_ENABLED` ausente). Não foram aplicados seeds.
+
+Os critérios operacionais do piloto com participação continuam pendentes: envio real, chaves, responsáveis, textos definitivos e medições. Ver [publicação de leitura](publicacao-leitura.md) e [registro da esteira](../09-esteira-vuca.md). Não confundir este marco com a abertura de todos os recursos ao público.

@@ -9,6 +9,7 @@
 interface Env {
   SESSION_SECRET?: string;
   PUBLIC_SIGNUPS_ENABLED?: string;
+  COMMUNITY_ENABLED?: string;
   RESEND_API_KEY?: string;
 }
 

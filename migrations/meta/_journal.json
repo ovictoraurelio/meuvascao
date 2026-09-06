@@ -15,6 +15,13 @@
       "when": 1788697013998,
       "tag": "0002_identidade",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788717111439,
+      "tag": "0003_absurd_tyger_tiger",
+      "breakpoints": true
     }
   ]
 }

@@ -44,7 +44,7 @@ test.describe("F5: Jogos", () => {
   test("sem comentários ainda, não mostra contagem zero inventada", async ({
     page,
   }) => {
-    await page.goto("/jogos/vasco-x-adversario-seed");
+    await page.goto("/jogos/vasco-x-adversario-sem-horario");
     await expect(
       page.getByText("A resenha começa no primeiro comentário"),
     ).toBeVisible();

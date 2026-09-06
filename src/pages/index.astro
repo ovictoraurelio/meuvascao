@@ -3,6 +3,7 @@ import { actions } from "astro:actions";
 
 import { publicSignupsEnabled } from "@/lib/env";
 import { getRequestDb } from "@/lib/db/client";
+import { listThreads } from "@/modules/comunidade";
 import { listPublishedBySlot } from "@/modules/curadoria";
 import { findNextMatch } from "@/modules/partidas";
 import CartaoProximoJogo from "../components/partidas/CartaoProximoJogo.astro";
@@ -12,16 +13,22 @@ import Base from "../layouts/Base.astro";
 
 const signupsEnabled = publicSignupsEnabled();
 const db = getRequestDb();
-const [nextMatch, em1Minuto, ultimasNoticias] = await Promise.all([
-  findNextMatch(db),
-  listPublishedBySlot(db, "em1minuto"),
-  listPublishedBySlot(db, "ultimas"),
-]);
+const [nextMatch, em1Minuto, ultimasNoticias, activeThreads] =
+  await Promise.all([
+    findNextMatch(db),
+    listPublishedBySlot(db, "em1minuto"),
+    listPublishedBySlot(db, "ultimas"),
+    listThreads(db),
+  ]);
 
+const highlightedThread = activeThreads[0];
 const comentarHref = nextMatch ? `/jogos/${nextMatch.slug}#comentar` : null;
 const result = Astro.getActionResult(actions.leads.cadastrar);
 const semDadosNenhum =
-  !nextMatch && em1Minuto.length === 0 && ultimasNoticias.length === 0;
+  !nextMatch &&
+  em1Minuto.length === 0 &&
+  ultimasNoticias.length === 0 &&
+  !highlightedThread;
 ---
 
 <Base
@@ -50,7 +57,18 @@ const semDadosNenhum =
 
     <section data-testid="resenha-destaque" aria-label="Resenha em destaque">
       <h2>A torcida tá falando</h2>
-      <p>A resenha começa no primeiro comentário.</p>
+      {
+        highlightedThread ? (
+          <p>
+            Vasco x {highlightedThread.opponentName}.{" "}
+            <a href={`/jogos/${highlightedThread.slug}#comentar`}>
+              Ver resenha
+            </a>
+          </p>
+        ) : (
+          <p>A resenha começa no primeiro comentário.</p>
+        )
+      }
     </section>
 
     <ListaLinks
@@ -113,6 +131,10 @@ const semDadosNenhum =
 </Base>
 
 <style>
+  .home p a {
+    text-decoration: underline;
+  }
+
   .home {
     display: flex;
     flex-direction: column;

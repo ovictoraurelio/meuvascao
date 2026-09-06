@@ -7,7 +7,12 @@ vi.mock("cloudflare:workers", () => ({
   env: { ENVIRONMENT: "development", SITE_URL: "http://localhost:4321" },
 }));
 
-import { isDevelopment, isProduction, publicSignupsEnabled } from "@/lib/env";
+import {
+  isDevelopment,
+  isProduction,
+  publicSignupsEnabled,
+  communityEnabled,
+} from "@/lib/env";
 
 // A distinção entre isDevelopment e !isProduction importa de verdade: rotas que nunca podem ser
 // alcançáveis fora de uma máquina de desenvolvimento (dev-login, /dev/mailbox) checam
@@ -52,6 +57,24 @@ describe("publicSignupsEnabled", () => {
       publicSignupsEnabled({
         ENVIRONMENT: environment,
         PUBLIC_SIGNUPS_ENABLED: flag,
+      } as Env),
+    ).toBe(expected);
+  });
+});
+
+describe("communityEnabled", () => {
+  it.each([
+    ["development", undefined, true],
+    ["preview", undefined, false],
+    ["production", undefined, false],
+    ["production", "true", true],
+    ["development", "false", false],
+    ["preview", "invalid", false],
+  ])("%s flag=%s returns %s", (environment, flag, expected) => {
+    expect(
+      communityEnabled({
+        ENVIRONMENT: environment,
+        COMMUNITY_ENABLED: flag,
       } as Env),
     ).toBe(expected);
   });

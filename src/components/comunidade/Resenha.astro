@@ -1,0 +1,276 @@
+---
+import { actions } from "astro:actions";
+import Turnstile from "../ui/Turnstile.astro";
+interface Props {
+  matchId: string;
+  enabled: boolean;
+  postingOpen: boolean;
+  canWrite: boolean;
+  loginHref: string;
+  items: {
+    id: string;
+    parentId: string | null;
+    body: string;
+    nickname: string;
+    status: string;
+    likeCount: number;
+    createdAt: string;
+  }[];
+  nextCursor: string | null;
+  endCursor: string | null;
+  parentId?: string;
+  error?: string;
+  published?: string;
+  notice?: string;
+}
+const {
+  matchId,
+  enabled,
+  postingOpen,
+  canWrite,
+  loginHref,
+  items,
+  nextCursor,
+  endCursor,
+  parentId,
+  error,
+  published,
+  notice,
+} = Astro.props;
+---
+
+<section
+  id="comentar"
+  class="resenha"
+  data-match-id={matchId}
+  data-end-cursor={endCursor ?? ""}
+  data-has-more={nextCursor ? "true" : "false"}
+  data-published={published ?? ""}
+  data-login-href={loginHref}
+>
+  <h2>Resenha</h2>
+  {
+    (!enabled || !postingOpen) && (
+      <p>
+        Publicações pausadas. Acompanhe os jogos e os comentários já publicados.
+      </p>
+    )
+  }
+  {items.length === 0 && <p>A resenha começa no primeiro comentário.</p>}
+  {error && <p role="alert">{error}</p>}
+  {published && <p role="status">Comentário publicado.</p>}
+  {notice && <p role="status">{notice}</p>}
+  <button type="button" id="novas-mensagens" hidden>Novas mensagens</button>
+  <ol>
+    {
+      items.map((item) => (
+        <li>
+          <article id={`comentario-${item.id}`} class="comentario">
+            <header>
+              <>
+                <strong>{item.nickname}</strong>
+                <time datetime={item.createdAt}>
+                  {new Date(item.createdAt).toLocaleString("pt-BR", {
+                    timeZone: "America/Sao_Paulo",
+                  })}
+                </time>
+              </>
+            </header>
+            {item.parentId && (
+              <p>
+                <a href={`#comentario-${item.parentId}`}>
+                  Em resposta a outro comentário
+                </a>
+              </p>
+            )}
+            <p class="corpo">{item.body}</p>
+            {item.likeCount > 0 && (
+              <p>
+                {item.likeCount} {item.likeCount === 1 ? "curtida" : "curtidas"}
+              </p>
+            )}
+            {enabled && item.status === "visible" && (
+              <div class="interacoes">
+                {canWrite ? (
+                  <>
+                    {postingOpen && (
+                      <form method="POST" action={actions.comunidade.curtir}>
+                        <input type="hidden" name="commentId" value={item.id} />
+                        <button type="submit">Curtir</button>
+                      </form>
+                    )}
+                    {postingOpen && !item.parentId && (
+                      <a href={`?responder=${item.id}#comentar`}>Responder</a>
+                    )}
+                    <details>
+                      <summary>Denunciar</summary>
+                      <form method="POST" action={actions.comunidade.denunciar}>
+                        <input type="hidden" name="commentId" value={item.id} />
+                        <label>
+                          Motivo
+                          <textarea
+                            name="reason"
+                            required
+                            minlength="3"
+                            maxlength="500"
+                          />
+                        </label>
+                        <button type="submit">Enviar denúncia</button>
+                      </form>
+                    </details>
+                  </>
+                ) : (
+                  <a href={loginHref}>Entrar para participar</a>
+                )}
+              </div>
+            )}
+          </article>
+        </li>
+      ))
+    }
+  </ol>
+  {
+    nextCursor && (
+      <a href={`?cursor=${encodeURIComponent(nextCursor)}#comentar`}>
+        Próximos comentários
+      </a>
+    )
+  }
+  {
+    enabled && postingOpen && (
+      <form
+        id="resenha-form"
+        method="POST"
+        action={actions.comunidade.comentar}
+      >
+        <>
+          <input type="hidden" name="matchId" value={matchId} />
+          <input
+            type="hidden"
+            name="idempotencyKey"
+            value={crypto.randomUUID()}
+          />
+        </>
+        {parentId && (
+          <>
+            <input type="hidden" name="parentId" value={parentId} />
+            <p>
+              Respondendo ao comentário selecionado.{" "}
+              <a href="#comentar" id="cancelar-resposta">
+                Cancelar resposta
+              </a>
+            </p>
+          </>
+        )}
+        <>
+          <label for="comentario-texto">Seu comentário</label>
+          <textarea
+            id="comentario-texto"
+            name="body"
+            required
+            maxlength="2000"
+            rows="4"
+          />
+        </>
+        {canWrite ? (
+          <>
+            <Turnstile />
+            <button type="submit">Publicar comentário</button>
+          </>
+        ) : (
+          <a href={loginHref} id="entrar-resenha">
+            Entrar para publicar
+          </a>
+        )}
+        <p class="orientacao">
+          Até 2.000 caracteres. Respeite as{" "}
+          <a href="/regras-da-resenha">regras da resenha</a>.
+        </p>
+      </form>
+    )
+  }
+</section>
+<script src="../../islands/resenha.ts"></script>
+<style>
+  .resenha {
+    display: grid;
+    gap: var(--space-4);
+    margin-block-start: var(--space-6);
+    padding-block: var(--space-4);
+  }
+
+  .resenha ol {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .comentario {
+    border: 1px solid var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+    overflow-wrap: anywhere;
+  }
+
+  .comentario header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .comentario time,
+  .orientacao {
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+  }
+
+  .corpo {
+    white-space: pre-wrap;
+  }
+
+  .interacoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .resenha form {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .resenha textarea {
+    min-block-size: var(--size-tap-target-min);
+    inline-size: 100%;
+    border: 1px solid var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+  }
+
+  .resenha button,
+  .interacoes a,
+  .resenha summary,
+  #entrar-resenha {
+    min-block-size: var(--size-tap-target-min);
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-3);
+  }
+
+  .resenha button {
+    background: var(--color-accent);
+    color: var(--color-paper);
+    border-radius: var(--radius-sm);
+    justify-content: center;
+  }
+
+  .resenha button[hidden] {
+    display: none;
+  }
+
+  .resenha p a {
+    text-decoration: underline;
+  }
+</style>

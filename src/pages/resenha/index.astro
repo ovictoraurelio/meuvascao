@@ -1,11 +1,56 @@
 ---
-import EstadoVazio from "../../layouts/EstadoVazio.astro";
+import { getRequestDb } from "@/lib/db/client";
+import { communityEnabled } from "@/lib/env";
+import { listThreads } from "@/modules/comunidade";
+import Base from "../../layouts/Base.astro";
+const threads = await listThreads(getRequestDb());
 ---
 
-<EstadoVazio
+<Base
   title="Resenha — Meu Vascão"
-  description="A torcida comentando cada jogo do Vasco."
+  description="Conversas da torcida por partida."
   active="resenha"
-  heading="Resenha"
-  message="Em construção. A conversa por jogo chega na próxima fatia."
-/>
+>
+  <section class="resenhas">
+    <h1>Resenha</h1>
+    {!communityEnabled() && <p>Novas publicações ainda estão pausadas.</p>}
+    {
+      threads.length === 0 ? (
+        <p>
+          Nenhuma conversa começou.{" "}
+          <a href="/jogos">Escolha uma partida na agenda</a>.
+        </p>
+      ) : (
+        <ul>
+          {threads.map((thread) => (
+            <li>
+              <a href={`/jogos/${thread.slug}#comentar`}>
+                Vasco x {thread.opponentName} · {thread.commentCount}{" "}
+                comentários
+              </a>
+              {thread.status === "closed" && <span> · Resenha fechada</span>}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</Base>
+<style>
+  .resenhas {
+    padding: var(--space-6) var(--space-4);
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .resenhas ul {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .resenhas li a {
+    min-block-size: var(--size-tap-target-min);
+    display: inline-flex;
+    align-items: center;
+  }
+</style>

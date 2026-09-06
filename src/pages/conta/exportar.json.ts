@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 
+import { exportOwnCommunityData } from "@/modules/comunidade";
 import { getRequestDb } from "@/lib/db/client";
 import { buildAccountExport, getAuthenticatedUser } from "@/modules/identidade";
 
@@ -12,7 +13,10 @@ export const GET: APIRoute = async (context) => {
     );
   }
 
-  const data = buildAccountExport(authenticated.user);
+  const data = {
+    ...buildAccountExport(authenticated.user),
+    comunidade: await exportOwnCommunityData(db, authenticated.user.id),
+  };
   return new Response(JSON.stringify(data, null, 2), {
     headers: {
       "Content-Type": "application/json",

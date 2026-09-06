@@ -9,8 +9,7 @@ import { expect, type Page, test } from "@playwright/test";
 // O servidor de teste sempre sobe com esse seed carregado (scripts/db-reset-local.sh, sem
 // argumento = "e2e") — não há como testar "banco vazio" nesta mesma suíte sem um segundo servidor
 // com outro seed. O que dá para garantir de qualquer forma: nenhuma contagem inventada aparece na
-// home mesmo com dados reais, e a seção que hoje está genuinamente vazia (resenha, antes da F8)
-// mostra um estado honesto em vez de um número fingido.
+// home mesmo com dados reais. F8 pode criar resenhas em paralelo; o destaque usa dados do banco.
 test.describe("F4: Home + captura", () => {
   test("nenhum número inventado aparece na home, mesmo com dados cadastrados", async ({
     page,
@@ -20,10 +19,7 @@ test.describe("F4: Home + captura", () => {
     expect(html).not.toMatch(
       /\d+\s+(respostas?|curtidas?|reaç(ão|ões)|coment[aá]rios?|torcedores?|seguidores?|visualizaç(ão|ões))/i,
     );
-    // A resenha ainda não existe (F8): a seção mostra isso, não um "0 comentários".
-    await expect(
-      page.getByText("A resenha começa no primeiro comentário"),
-    ).toBeVisible();
+    await expect(page.getByTestId("resenha-destaque")).toBeVisible();
   });
 
   test("com dados cadastrados, a home mostra jogo, links, resenha e notícias", async ({
@@ -31,7 +27,9 @@ test.describe("F4: Home + captura", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByTestId("dia-de-vasco")).toBeVisible();
-    await expect(page.getByText("Adversário Seed")).toBeVisible();
+    await expect(
+      page.getByTestId("dia-de-vasco").getByText("Adversário Seed"),
+    ).toBeVisible();
 
     const links = page.getByTestId("em-1-minuto").getByRole("listitem");
     await expect(links).toHaveCount(3);

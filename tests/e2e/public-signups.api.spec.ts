@@ -36,3 +36,25 @@ for (const path of ["/", "/entrar"]) {
     expect(html).toContain("temporariamente indisponível");
   });
 }
+
+for (const action of [
+  "comunidade.comentar",
+  "comunidade.curtir",
+  "comunidade.denunciar",
+]) {
+  test(`${action} refuses participation while community is closed`, async ({
+    request,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Test server URL missing");
+    const response = await request.post(`/_actions/${action}`, {
+      headers: { Origin: baseURL },
+      form: {
+        commentId: "00000000-0000-4000-8000-000000000001",
+        reason: "Conteúdo denunciado",
+      },
+    });
+    expect(response.status()).toBe(403);
+    expect(await response.text()).toContain("ainda não está aberta");
+  });
+}
