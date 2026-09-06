@@ -5,8 +5,10 @@ export {
   DuplicateSlugError,
   findMatchBySlug,
   findNextMatch,
+  listMatches,
   type CreateMatchInput,
   type Match,
+  type MatchAgenda,
 } from "./matches.repo";
 export {
   isCancelled,

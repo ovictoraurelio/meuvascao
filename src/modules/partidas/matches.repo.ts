@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 
 import type { Database } from "@/lib/db/client";
 import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
@@ -112,4 +112,42 @@ export async function findNextMatch(db: Database): Promise<Match | null> {
     .orderBy(sql`${matches.kickoffAt} is null`, asc(matches.kickoffAt))
     .limit(1);
   return row ?? null;
+}
+
+export interface MatchAgenda {
+  upcoming: Match[];
+  past: Match[];
+}
+
+/**
+ * Todos os jogos para a agenda (`/jogos`): os que ainda podem acontecer, do mais próximo ao mais
+ * distante (sem horário por último, mesmo critério de findNextMatch); os que já encerraram ou
+ * foram cancelados, do mais recente ao mais antigo. Duas consultas simples em vez de buscar tudo
+ * e agrupar em memória — a v1 não tem paginação e o volume esperado (poucos jogos por semana) não
+ * justifica a complexidade de uma única consulta com ordenação condicional por grupo.
+ */
+export async function listMatches(db: Database): Promise<MatchAgenda> {
+  const upcoming = await db
+    .select()
+    .from(matches)
+    .where(
+      and(
+        isNull(matches.deletedAt),
+        inArray(matches.status, UPCOMING_STATUSES),
+      ),
+    )
+    .orderBy(sql`${matches.kickoffAt} is null`, asc(matches.kickoffAt));
+
+  const past = await db
+    .select()
+    .from(matches)
+    .where(
+      and(
+        isNull(matches.deletedAt),
+        notInArray(matches.status, UPCOMING_STATUSES),
+      ),
+    )
+    .orderBy(sql`${matches.kickoffAt} is null`, sql`${matches.kickoffAt} desc`);
+
+  return { upcoming, past };
 }
