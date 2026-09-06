@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { checkPairs, contrastRatio } from "@/lib/color/contrast";
+import {
+  checkPairs,
+  contrastRatio,
+  MIN_CONTRAST_TEXT,
+  MIN_CONTRAST_UI,
+} from "@/lib/color/contrast";
 
 describe("contrastRatio", () => {
   it("preto sobre branco é o contraste máximo (21:1)", () => {
@@ -25,7 +30,9 @@ describe("contrastRatio", () => {
 // regressão dos números citados na decisão e documentam por que accent-on-dark existe.
 describe("paleta planejada para design/tokens.json", () => {
   it("ink (#101010) sobre paper (#FAFAF7) atende texto (AA)", () => {
-    expect(contrastRatio("#101010", "#FAFAF7")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#101010", "#FAFAF7")).toBeGreaterThanOrEqual(
+      MIN_CONTRAST_TEXT,
+    );
   });
 
   it("ink-muted (#5C5C5C) sobre paper atende texto (AA), ~6,4:1", () => {
@@ -37,23 +44,32 @@ describe("paleta planejada para design/tokens.json", () => {
   });
 
   it("paper-muted (#B8B8B8) sobre superfície escura (ink) atende UI, ~9,6:1", () => {
-    expect(contrastRatio("#B8B8B8", "#101010")).toBeCloseTo(9.6, 1);
+    const ratio = contrastRatio("#B8B8B8", "#101010");
+    expect(ratio).toBeCloseTo(9.6, 1);
+    expect(ratio).toBeGreaterThanOrEqual(MIN_CONTRAST_UI);
   });
 
   it("paper-muted sobre paper NÃO atende texto (~1,9:1) — proibido para texto nos tokens", () => {
     const ratio = contrastRatio("#B8B8B8", "#FAFAF7");
     expect(ratio).toBeCloseTo(1.9, 1);
-    expect(ratio).toBeLessThan(4.5);
+    expect(ratio).toBeLessThan(MIN_CONTRAST_TEXT);
+    // Também não atende nem o piso mais permissivo de UI: paper-muted sobre paper não serve nem
+    // para um alvo não textual (borda, ícone), só sobre superfície escura.
+    expect(ratio).toBeLessThan(MIN_CONTRAST_UI);
   });
 
   it("accent sobre superfície escura (ink) NÃO atende texto (~3,3:1) — por isso existe accent-on-dark", () => {
     const ratio = contrastRatio("#C51D2B", "#101010");
     expect(ratio).toBeCloseTo(3.25, 1);
-    expect(ratio).toBeLessThan(4.5);
+    expect(ratio).toBeLessThan(MIN_CONTRAST_TEXT);
+    // Mas atende o piso de UI (bordas, ícones) mesmo sobre superfície escura.
+    expect(ratio).toBeGreaterThanOrEqual(MIN_CONTRAST_UI);
   });
 
   it("accent-on-dark (#F0424E) sobre superfície escura (ink) atende texto (AA)", () => {
-    expect(contrastRatio("#F0424E", "#101010")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#F0424E", "#101010")).toBeGreaterThanOrEqual(
+      MIN_CONTRAST_TEXT,
+    );
   });
 });
 
@@ -64,13 +80,13 @@ describe("checkPairs", () => {
         label: "ink/paper",
         foreground: "#101010",
         background: "#FAFAF7",
-        minRatio: 4.5,
+        minRatio: MIN_CONTRAST_TEXT,
       },
       {
         label: "accent/paper",
         foreground: "#C51D2B",
         background: "#FAFAF7",
-        minRatio: 4.5,
+        minRatio: MIN_CONTRAST_TEXT,
       },
     ]);
     expect(failures).toEqual([]);
@@ -82,7 +98,7 @@ describe("checkPairs", () => {
         label: "paper-muted/paper",
         foreground: "#B8B8B8",
         background: "#FAFAF7",
-        minRatio: 4.5,
+        minRatio: MIN_CONTRAST_TEXT,
       },
     ]);
     expect(failures).toHaveLength(1);

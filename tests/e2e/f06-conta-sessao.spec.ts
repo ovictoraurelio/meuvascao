@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test } from "@playwright/test";
 
 // Backlog visível da fatia F6 (Conta e sessão via link mágico), critério de aceite: docs/01:52
@@ -61,7 +63,15 @@ test.describe.fixme("F6: Conta e sessão", () => {
     await page.goto("/jogos/vasco-x-adversario-seed#comentar");
     await page.getByRole("link", { name: "Comentar" }).click();
     await expect(page).toHaveURL(/\/entrar\?redirect=/);
-    // ... completar o fluxo de login ...
+
+    await page.getByLabel("E-mail").fill("torcedor@example.com");
+    await page.getByRole("button", { name: "Enviar link de acesso" }).click();
+    await page.goto("/dev/mailbox");
+    await page
+      .getByRole("link", { name: /entrar/i })
+      .first()
+      .click();
+
     await expect(page).toHaveURL(/\/jogos\/vasco-x-adversario-seed#comentar/);
   });
 
@@ -93,6 +103,14 @@ test.describe.fixme("F6: Conta e sessão", () => {
       page.goto("/conta/exportar.json"),
     ]);
     expect(download.suggestedFilename()).toMatch(/\.json$/);
+
+    const path = await download.path();
+    if (!path) throw new Error("download não gerou um arquivo local");
+    const data: unknown = JSON.parse(await readFile(path, "utf-8"));
+    expect(data).toMatchObject({ apelido: expect.any(String) });
+    const serialized = JSON.stringify(data);
+    // Nenhum campo interno (hash de token, HMAC de sessão) vaza no export do usuário.
+    expect(serialized).not.toMatch(/token_hash|session.*hmac|password/i);
   });
 
   test("logout exige Origin confiável (proteção CSRF)", async ({ request }) => {

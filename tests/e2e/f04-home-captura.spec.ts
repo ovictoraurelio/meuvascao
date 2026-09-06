@@ -77,7 +77,12 @@ test.describe.fixme("F4: Home + captura", () => {
   test("payload hostil em título de link ou adversário não executa nem injeta nó", async ({
     page,
   }) => {
-    // Seed hostil: título de link curado e nome de adversário com <script> e handlers inline.
+    // Seed hostil: título de link curado e nome de adversário com um marcador único (ex.:
+    // "seed-xss-marker") dentro de `<script>alert(1)</script>` e de atributos como `onerror`.
+    // Não conta todo `<script>` da página (a hidratação do Astro e um JSON-LD legítimo também
+    // são `script:not([src])` e dariam falso positivo); procura o marcador especificamente
+    // dentro de um nó `<script>` real, o que só aconteceria se o payload tivesse sido montado
+    // como HTML em vez de escapado como texto.
     const alerts: string[] = [];
     page.on("dialog", (dialog) => {
       alerts.push(dialog.message());
@@ -85,8 +90,10 @@ test.describe.fixme("F4: Home + captura", () => {
     });
     await page.goto("/");
     expect(alerts).toEqual([]);
-    const scriptNodes = await page.locator("script:not([src])").count();
-    expect(scriptNodes).toBe(0);
+    const injected = await page
+      .locator('script:has-text("seed-xss-marker")')
+      .count();
+    expect(injected).toBe(0);
   });
 
   test("home populada não tem violação de acessibilidade séria ou crítica", async ({
