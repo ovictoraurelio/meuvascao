@@ -1,3 +1,4 @@
+import { comunidade } from "./comunidade";
 import { admin } from "./admin";
 import { moderacao } from "./moderacao";
 import { ActionError, defineAction } from "astro:actions";
@@ -37,6 +38,7 @@ const SESSION_INVALID_MESSAGE =
 // resultado volta via Astro.getActionResult) e `security.checkOrigin` (astro.config.ts) já
 // rejeita um POST cuja Origin não seja a do próprio site — é a proteção contra CSRF.
 export const server = {
+  comunidade,
   admin,
   moderacao,
   leads: {

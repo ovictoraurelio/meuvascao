@@ -30,3 +30,9 @@ export function publicSignupsEnabled(current: Env = getEnv()): boolean {
   const flag = current.PUBLIC_SIGNUPS_ENABLED;
   return flag === undefined ? isDevelopment(current) : flag === "true";
 }
+
+/** Comunidade pública depende de habilitação operacional explícita. */
+export function communityEnabled(current: Env = getEnv()): boolean {
+  const flag = current.COMMUNITY_ENABLED;
+  return flag === undefined ? isDevelopment(current) : flag === "true";
+}

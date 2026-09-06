@@ -1,4 +1,9 @@
 ---
+import { actions } from "astro:actions";
+import { communityEnabled } from "@/lib/env";
+import { findThread, listComments, writingClosed } from "@/modules/comunidade";
+import { getAuthenticatedUser } from "@/modules/identidade";
+import Resenha from "../../components/comunidade/Resenha.astro";
 import { getRequestDb } from "@/lib/db/client";
 import { formatKickoff } from "@/lib/match-kickoff";
 import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
@@ -23,9 +28,20 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
 // Só a checagem stateless do cookie (sem D1): uma sessão revogada só é pega de verdade quando
 // a resenha (F8) tentar publicar um comentário de fato. Aqui o pior caso é o link levar à seção
 // em vez de a /entrar — inofensivo enquanto não existe formulário de comentário.
-const comentarHref = Astro.locals.session
-  ? "#comentar"
-  : `/entrar?redirect=${encodeURIComponent(`${Astro.url.pathname}#comentar`)}`;
+const comentarHref = "#comentar";
+const enabled = communityEnabled();
+const auth = await getAuthenticatedUser(db, Astro.locals.session);
+const thread = await findThread(db, match.id);
+let page;
+try {
+  page = await listComments(db, match.id, Astro.url.searchParams.get("cursor"));
+} catch {
+  return new Response("Cursor inválido.", { status: 400 });
+}
+const posted = Astro.getActionResult(actions.comunidade.comentar);
+const liked = Astro.getActionResult(actions.comunidade.curtir);
+const reported = Astro.getActionResult(actions.comunidade.denunciar);
+const loginHref = `/entrar?redirect=${encodeURIComponent(`${Astro.url.pathname}#comentar`)}`;
 ---
 
 <Base
@@ -81,10 +97,26 @@ const comentarHref = Astro.locals.session
 
     <a href={comentarHref} class="cta-comentar"> Comentar </a>
 
-    <section id="comentar" class="resenha">
-      <h2>Resenha</h2>
-      <p>A resenha começa no primeiro comentário.</p>
-    </section>
+    <Resenha
+      matchId={match.id}
+      enabled={enabled}
+      postingOpen={thread?.status !== "closed" && !(await writingClosed(db))}
+      canWrite={!!auth && auth.user.status === "active" && !!auth.user.nickname}
+      loginHref={loginHref}
+      items={page.items}
+      nextCursor={page.nextCursor}
+      endCursor={page.endCursor}
+      parentId={Astro.url.searchParams.get("responder") ?? undefined}
+      error={posted?.error?.message ??
+        liked?.error?.message ??
+        reported?.error?.message}
+      published={posted?.data?.id}
+      notice={reported?.data
+        ? "Denúncia enviada para a moderação."
+        : liked?.data
+          ? "Curtida registrada."
+          : undefined}
+    />
   </article>
 </Base>
 
@@ -146,5 +178,9 @@ const comentarHref = Astro.locals.session
     margin-block-start: var(--space-6);
     padding-block-start: var(--space-4);
     border-block-start: 1px solid var(--color-paper-muted);
+  }
+
+  .fonte a {
+    text-decoration: underline;
   }
 </style>
