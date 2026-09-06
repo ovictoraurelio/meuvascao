@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 test.describe("F7: Administração — agenda e curadoria", () => {
   async function login(page: Page, role = "editor") {
     const response = await page.request.post("/auth/dev-login", {
-      headers: { Origin: "http://127.0.0.1:8788" },
+      headers: { Origin: new URL("/", test.info().project.use.baseURL).origin },
       form: {
         nickname: `Equipe${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
         role,
@@ -116,7 +116,9 @@ test.describe("F7: Administração — agenda e curadoria", () => {
     ]) {
       const response = await page.request.post(`/_actions/admin.${name}`, {
         multipart: {},
-        headers: { Origin: "http://127.0.0.1:8788" },
+        headers: {
+          Origin: new URL("/", test.info().project.use.baseURL).origin,
+        },
       });
       expect(response.status()).toBe(403);
     }
