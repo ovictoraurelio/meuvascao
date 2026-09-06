@@ -49,7 +49,7 @@ export default defineConfig({
   webServer: {
     // Sempre sobe um servidor próprio sobre o build atual e o banco recriado. Não reaproveita um
     // `npm run preview` aberto na mesma porta, que poderia servir um build antigo com banco sujo.
-    command: `sh scripts/db-reset-local.sh && npm run serve:built -- --port ${PORT} --var ENVIRONMENT:${environment}`,
+    command: `sh scripts/db-reset-local.sh && npx wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state --port ${PORT} --var ENVIRONMENT:${environment}`,
     // Prontidão pela home: se o banco falhar, o 503 de /api/health aparece como falha de teste
     // explícita em health.api.spec.ts, não como timeout do servidor.
     url: `${baseURL}/`,
