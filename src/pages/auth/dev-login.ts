@@ -1,19 +1,23 @@
 import type { APIRoute } from "astro";
 
 import { getRequestDb } from "@/lib/db/client";
-import { isProduction } from "@/lib/env";
+import { isDevelopment } from "@/lib/env";
 import { safeRedirectTarget } from "@/lib/http/redirect-safe";
 import {
   devLogin,
   devLoginSchema,
-  SESSION_COOKIE_NAME,
-  SESSION_MAX_AGE_SECONDS,
+  ReservedNicknameError,
+  setSessionCookie,
 } from "@/modules/identidade";
 
-// Só fora de produção — verificado em runtime por ENVIRONMENT (CLAUDE.md #7), nunca por
-// esquema/rota condicional. tests/workers/dev-login.test.ts prova o 404 em produção.
+// Só em desenvolvimento local/CI — nunca em preview nem produção (CLAUDE.md #7), verificado em
+// runtime, nunca por esquema/rota condicional. Cria sessão com qualquer papel (inclusive
+// admin/moderador) sem exigir nada de quem chama; preview tem `workers_dev: true` e é
+// publicamente alcançável, então `!isProduction()` sozinho deixaria qualquer visitante do preview
+// de uma PR se autenticar como admin. tests/workers/dev-login.test.ts prova o 404 fora de
+// desenvolvimento.
 export const POST: APIRoute = async (context) => {
-  if (isProduction()) {
+  if (!isDevelopment()) {
     return new Response("Not found", { status: 404 });
   }
 
@@ -29,14 +33,16 @@ export const POST: APIRoute = async (context) => {
   }
 
   const db = getRequestDb();
-  const { sessionCookieValue } = await devLogin(db, parsed.data);
-  context.cookies.set(SESSION_COOKIE_NAME, sessionCookieValue, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
-  });
+  let sessionCookieValue: string;
+  try {
+    ({ sessionCookieValue } = await devLogin(db, parsed.data));
+  } catch (error) {
+    if (error instanceof ReservedNicknameError) {
+      return new Response("Apelido reservado.", { status: 400 });
+    }
+    throw error;
+  }
+  setSessionCookie(context.cookies, sessionCookieValue);
 
   const redirectTarget =
     safeRedirectTarget(formData.get("redirect")?.toString()) ?? "/perfil";

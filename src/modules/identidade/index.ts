@@ -34,8 +34,10 @@ export { listRecentDevMailboxMessages } from "./mailbox.repo";
 export { isReservedNickname, normalizeNickname } from "./nickname";
 export {
   buildSessionCookieValue,
+  clearSessionCookie,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
+  setSessionCookie,
   verifySessionCookieValue,
   type SessionCookiePayload,
 } from "./session";

@@ -1,3 +1,5 @@
+import type { AstroCookies } from "astro";
+
 import {
   base64UrlToText,
   hmacSign,
@@ -9,25 +11,29 @@ import { getEnv, isProduction } from "@/lib/env";
 export const SESSION_COOKIE_NAME = "mv_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 dias
 
-// Nunca usado em produção de verdade (só quando alguém esquece de configurar o segredo real):
-// mesmo padrão de src/lib/turnstile.ts — degrada para um valor público e conhecido em vez de
-// quebrar o site, mas acusa alto e claro quando isso acontece em produção.
+// Só para fora de produção — um segredo público e conhecido (visível a qualquer um que leia o
+// repositório) nunca pode assinar sessão de verdade. Ao contrário de src/lib/turnstile.ts (cuja
+// chave de teste degrada para "sempre aprova", pior caso é spam), um SESSION_SECRET público
+// deixaria qualquer um forjar um cookie de sessão válido para qualquer usuário — a diferença de
+// risco justifica falhar fechado aqui, não só avisar e continuar.
 const DEV_FALLBACK_SECRET =
   "dev-only-insecure-session-secret-nunca-use-em-producao";
+
+export class SessionSecretMissingError extends Error {
+  constructor() {
+    super(
+      "SESSION_SECRET não configurado em produção — recusando assinar ou verificar sessão.",
+    );
+  }
+}
 
 function getSessionSecret(): string {
   // SESSION_SECRET não está em wrangler.jsonc por ser segredo de produção (`wrangler secret
   // put`); o tipo gerado não garante nada sobre ele (ver src/env.d.ts).
   const configured = getEnv().SESSION_SECRET;
-  if (!configured) {
-    if (isProduction()) {
-      console.error(
-        "SESSION_SECRET não configurado em produção — usando segredo de desenvolvimento (inseguro).",
-      );
-    }
-    return DEV_FALLBACK_SECRET;
-  }
-  return configured;
+  if (configured) return configured;
+  if (isProduction()) throw new SessionSecretMissingError();
+  return DEV_FALLBACK_SECRET;
 }
 
 export interface SessionCookiePayload {
@@ -91,4 +97,20 @@ export async function verifySessionCookieValue(
   const { sid, uid, exp } = payload as SessionCookiePayload;
   if (exp <= Date.now()) return null;
   return { sid, uid, exp };
+}
+
+/** Grava o cookie de sessão com os mesmos atributos em todo lugar que abre uma sessão. */
+export function setSessionCookie(cookies: AstroCookies, value: string): void {
+  cookies.set(SESSION_COOKIE_NAME, value, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
+}
+
+/** Mesmo `path` do set — sem isso o navegador trataria como um cookie diferente e não o limparia. */
+export function clearSessionCookie(cookies: AstroCookies): void {
+  cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
 }

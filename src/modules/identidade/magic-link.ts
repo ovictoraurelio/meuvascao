@@ -21,7 +21,7 @@ import {
   consumeAuthToken,
   createAuthToken,
 } from "./tokens.repo";
-import { createUser, findUserByEmailNormalized, type User } from "./users.repo";
+import { findOrCreateUserByEmail, type User } from "./users.repo";
 
 const TOKEN_TTL_MS = 15 * 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -136,16 +136,10 @@ export async function confirmMagicLink(
 
   // auth_tokens só guarda o e-mail normalizado (nunca a grafia original digitada no pedido) — o
   // e-mail exibido para um usuário novo nasce já normalizado; ver users.repo.ts.
-  const existing = await findUserByEmailNormalized(
-    db,
-    consumed.emailNormalized,
-  );
-  const user =
-    existing ??
-    (await createUser(db, {
-      email: consumed.emailNormalized,
-      emailNormalized: consumed.emailNormalized,
-    }));
+  const user = await findOrCreateUserByEmail(db, {
+    email: consumed.emailNormalized,
+    emailNormalized: consumed.emailNormalized,
+  });
 
   const sessionId = newSessionId();
   await createSession(db, {

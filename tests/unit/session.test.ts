@@ -13,6 +13,7 @@ vi.mock("cloudflare:workers", () => ({ env: bindings }));
 import {
   buildSessionCookieValue,
   newSessionId,
+  SessionSecretMissingError,
   verifySessionCookieValue,
 } from "@/modules/identidade/session";
 
@@ -74,15 +75,13 @@ describe("buildSessionCookieValue / verifySessionCookieValue", () => {
     }
   });
 
-  it("acusa em produção se o segredo de sessão não estiver configurado", async () => {
+  it("recusa (não cai para um segredo público) em produção sem SESSION_SECRET configurado", async () => {
     bindings.ENVIRONMENT = "production";
-    const errorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    await buildSessionCookieValue("sid-1", "uid-1");
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("SESSION_SECRET"),
+    // Ao contrário do Turnstile (cujo pior caso é aprovar sem checar de verdade), um
+    // SESSION_SECRET público deixaria qualquer um forjar sessão de qualquer usuário — falha
+    // fechada aqui, não só um aviso e um segredo de repositório sendo usado de verdade.
+    await expect(buildSessionCookieValue("sid-1", "uid-1")).rejects.toThrow(
+      SessionSecretMissingError,
     );
-    errorSpy.mockRestore();
   });
 });

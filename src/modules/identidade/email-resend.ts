@@ -1,7 +1,10 @@
-import type { EmailSender, MagicLinkEmail } from "./email-sender";
+import {
+  MAGIC_LINK_EMAIL_SUBJECT,
+  type EmailSender,
+  type MagicLinkEmail,
+} from "./email-sender";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
-const SUBJECT = "Seu link de acesso ao Meu Vascão";
 // Domínio verificado na Cloudflare (SPF/DKIM/DMARC) é responsabilidade do fundador (runbook);
 // aqui só o endereço "de" combinado com esse domínio.
 const FROM_ADDRESS = "Meu Vascão <resenha@meuvascao.com>";
@@ -21,7 +24,7 @@ export function createResendSender(apiKey: string): EmailSender {
         body: JSON.stringify({
           from: FROM_ADDRESS,
           to,
-          subject: SUBJECT,
+          subject: MAGIC_LINK_EMAIL_SUBJECT,
           html: `<p>Clique para entrar: <a href="${link}">${link}</a></p>`,
         }),
       });

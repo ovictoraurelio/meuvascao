@@ -2,6 +2,7 @@ import { ActionError, defineAction } from "astro:actions";
 import { z } from "zod";
 
 import { getRequestDb } from "@/lib/db/client";
+import { getEnv, isDevelopment } from "@/lib/env";
 import { safeRedirectTarget } from "@/lib/http/redirect-safe";
 import {
   DuplicateLeadError,
@@ -14,6 +15,7 @@ import {
 import {
   chooseNickname,
   chooseNicknameSchema,
+  clearSessionCookie,
   deleteOwnAccount,
   DuplicateNicknameError,
   getAuthenticatedUser,
@@ -23,7 +25,6 @@ import {
   requireNotSuspended,
   ReservedNicknameError,
   revokeAllSessionsForUser,
-  SESSION_COOKIE_NAME,
   SuspendedAccountError,
   TurnstileFailedError as MagicLinkTurnstileFailedError,
 } from "@/modules/identidade";
@@ -116,10 +117,16 @@ export const server = {
 
         const db = getRequestDb();
         const ip = context.clientAddress || null;
-        // A origem da própria requisição, não getEnv().SITE_URL: o link precisa trazer quem
-        // clicar de volta para o host/porta onde a pessoa está de fato (preview de PR, porta
-        // alternativa do E2E) — SITE_URL é fixo por ambiente e nem sempre é o mesmo.
-        const siteUrl = context.url.origin;
+        // Em desenvolvimento (local, CI, E2E), a origem da própria requisição — o link precisa
+        // trazer quem clicar de volta para a porta onde o servidor de teste realmente está (o E2E
+        // usa uma porta diferente da fixada em wrangler.jsonc). Fora de desenvolvimento, SEMPRE
+        // getEnv().SITE_URL: o Host de uma requisição não é confiável (workers_dev: true expõe
+        // preview num domínio compartilhado *.workers.dev, onde nada garante que o cabeçalho Host
+        // recebido é o mesmo que roteou a requisição) — usá-lo aqui deixaria alguém escolher o
+        // domínio para onde o link do e-mail aponta, com o token de acesso em texto puro na URL.
+        const siteUrl = isDevelopment()
+          ? context.url.origin
+          : getEnv().SITE_URL;
 
         try {
           await requestMagicLink({ db, ip, siteUrl }, parsed.data);
@@ -219,7 +226,7 @@ export const server = {
         // (direito da pessoa, não uma ação na comunidade que a suspensão deveria bloquear).
         await deleteOwnAccount(db, authenticated.user.id);
         await revokeAllSessionsForUser(db, authenticated.user.id);
-        context.cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
+        clearSessionCookie(context.cookies);
         return { ok: true as const };
       },
     }),

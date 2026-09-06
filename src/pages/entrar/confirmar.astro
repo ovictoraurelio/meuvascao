@@ -5,10 +5,9 @@ import { getRequestDb } from "@/lib/db/client";
 import { safeRedirectTarget } from "@/lib/http/redirect-safe";
 import {
   confirmMagicLink,
-  findUserById,
+  getAuthenticatedUser,
   InvalidOrExpiredTokenError,
-  SESSION_COOKIE_NAME,
-  SESSION_MAX_AGE_SECONDS,
+  setSessionCookie,
 } from "@/modules/identidade";
 import Base from "../../layouts/Base.astro";
 
@@ -23,13 +22,7 @@ let tokenError: string | null = null;
 if (token) {
   try {
     const { sessionCookieValue } = await confirmMagicLink(db, token);
-    Astro.cookies.set(SESSION_COOKIE_NAME, sessionCookieValue, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_MAX_AGE_SECONDS,
-    });
+    setSessionCookie(Astro.cookies, sessionCookieValue);
     // Redireciona para a mesma página sem o token na URL: uma nova visita a este link (ou um
     // recarregamento vindo da escolha de apelido) não deve tentar consumir o token de novo — só
     // usar a sessão que acabou de ser criada. Sem isso, o próprio fluxo de "escolher apelido"
@@ -60,16 +53,17 @@ if (escolherApelidoResult?.data?.ok) {
 
 let nicknamePending = false;
 if (!tokenError && !token) {
-  const session = Astro.locals.session;
-  const user = session ? await findUserById(db, session.uid) : null;
-  if (user?.nickname) {
-    return Astro.redirect(redirectTarget ?? "/perfil");
-  }
-  if (user && !user.nickname) {
-    nicknamePending = true;
-  } else if (!user) {
+  // getAuthenticatedUser, não uma leitura direta de usuário: confirma no banco que a sessão
+  // continua ativa (não foi revogada por "sair de todos os dispositivos" enquanto o apelido
+  // ainda estava pendente), a mesma garantia que /perfil e as demais páginas autenticadas exigem.
+  const authenticated = await getAuthenticatedUser(db, Astro.locals.session);
+  if (!authenticated) {
     return Astro.redirect("/entrar");
   }
+  if (authenticated.user.nickname) {
+    return Astro.redirect(redirectTarget ?? "/perfil");
+  }
+  nicknamePending = true;
 }
 ---
 

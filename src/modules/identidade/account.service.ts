@@ -29,9 +29,14 @@ export async function getAuthenticatedUser(
   cookiePayload: SessionCookiePayload | null,
 ): Promise<AuthenticatedUser | null> {
   if (!cookiePayload) return null;
-  const session = await findActiveSession(db, cookiePayload.sid);
+  // As duas consultas não dependem uma da outra: o uid já vem do cookie, e a checagem de que ele
+  // bate com o dono real da sessão acontece depois que as duas resolvem, não antes de disparar a
+  // segunda.
+  const [session, user] = await Promise.all([
+    findActiveSession(db, cookiePayload.sid),
+    findUserById(db, cookiePayload.uid),
+  ]);
   if (!session || session.userId !== cookiePayload.uid) return null;
-  const user = await findUserById(db, session.userId);
   if (!user || user.status === "deleted") return null;
   return { session, user };
 }

@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { isUniqueConstraintError } from "@/lib/db/errors";
 import type { Database } from "@/lib/db/client";
 
-import { normalizeNickname } from "./nickname";
+import { ReservedNicknameError } from "./account.service";
+import { isReservedNickname, normalizeNickname } from "./nickname";
 import {
   buildSessionCookieValue,
   newSessionId,
@@ -12,7 +14,6 @@ import { createSession } from "./sessions.repo";
 import {
   createUser,
   findUserByNicknameNormalized,
-  setNickname,
   type User,
 } from "./users.repo";
 
@@ -48,21 +49,35 @@ export async function devLogin(
   db: Database,
   input: DevLoginInput,
 ): Promise<DevLoginResult> {
+  if (isReservedNickname(input.nickname)) throw new ReservedNicknameError();
+
   const nicknameNormalized = normalizeNickname(input.nickname);
   let user = await findUserByNicknameNormalized(db, nicknameNormalized);
   if (!user) {
-    const email = `dev-${nicknameNormalized}@example.invalid`;
-    const created = await createUser(db, {
-      email,
-      emailNormalized: email,
-      role: input.role,
-    });
-    user = await setNickname(
-      db,
-      created.id,
-      input.nickname,
-      nicknameNormalized,
-    );
+    // Duas chamadas concorrentes para o mesmo apelido novo (dois testes E2E disparando o mesmo
+    // fixture ao mesmo tempo) veriam ambas `user` nulo aqui; sem isto, a segunda propagaria o
+    // erro cru de UNIQUE do e-mail sintetizado em vez de simplesmente usar quem a primeira criou.
+    // createUser grava o apelido no mesmo INSERT (não um INSERT seguido de UPDATE): a busca de
+    // recuperação abaixo (por apelido) só encontra a linha da outra chamada se ela já nasceu com
+    // o apelido preenchido.
+    try {
+      const email = `dev-${nicknameNormalized}@example.invalid`;
+      user = await createUser(db, {
+        email,
+        emailNormalized: email,
+        nickname: input.nickname,
+        nicknameNormalized,
+        role: input.role,
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      const createdByOther = await findUserByNicknameNormalized(
+        db,
+        nicknameNormalized,
+      );
+      if (!createdByOther) throw error;
+      user = createdByOther;
+    }
   }
 
   const sessionId = newSessionId();

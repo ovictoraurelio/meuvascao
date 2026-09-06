@@ -62,6 +62,17 @@ describe("magic-link: confirmMagicLink", () => {
     );
   });
 
+  it("duas confirmações concorrentes do mesmo e-mail novo (dois tokens) resolvem para um único usuário", async () => {
+    await seedToken("concorrente@example.com", "token-concorrente-a");
+    await seedToken("concorrente@example.com", "token-concorrente-b");
+
+    const [a, b] = await Promise.all([
+      confirmMagicLink(db, "token-concorrente-a"),
+      confirmMagicLink(db, "token-concorrente-b"),
+    ]);
+    expect(a.user.id).toBe(b.user.id);
+  });
+
   it("rejeita um token expirado", async () => {
     await createAuthToken(db, {
       emailNormalized: "expirado-confirm@example.com",

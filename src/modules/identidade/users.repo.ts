@@ -42,15 +42,21 @@ export async function findUserByNicknameNormalized(
 }
 
 /**
- * Cria o usuário sem apelido ainda — o primeiro login pede a escolha antes de liberar a sessão.
- * `role` só existe para o dev-login (fatia F6, testes das fatias seguintes); o fluxo normal do
- * link mágico nunca a informa e o usuário nasce "torcedor" (padrão do próprio esquema).
+ * Cria o usuário. Apelido opcional: o fluxo normal do link mágico nunca o informa (nasce nulo,
+ * escolhido depois — ver findOrCreateUserByEmail); dev-login já sabe o apelido de antemão e o
+ * passa aqui, num único INSERT, não um INSERT seguido de UPDATE — uma corrida entre duas criações
+ * concorrentes do mesmo apelido novo (dois testes E2E disparando o mesmo fixture) só encontraria
+ * a linha da outra pela busca por apelido se ele já estivesse na própria linha inserida, não numa
+ * atualização que ainda não rodou. `role` só existe para o dev-login (fatia F6, testes das fatias
+ * seguintes); o link mágico nunca a informa e o usuário nasce "torcedor" (padrão do esquema).
  */
 export async function createUser(
   db: Database,
   input: {
     email: string;
     emailNormalized: string;
+    nickname?: string;
+    nicknameNormalized?: string;
     role?: User["role"];
   },
 ): Promise<User> {
@@ -61,12 +67,39 @@ export async function createUser(
       id: newId(),
       email: input.email,
       emailNormalized: input.emailNormalized,
+      nickname: input.nickname,
+      nicknameNormalized: input.nicknameNormalized,
       role: input.role,
       createdAt: now,
       updatedAt: now,
     })
     .returning();
   return assertReturningRow(row, "usuário");
+}
+
+/**
+ * Busca por e-mail normalizado; cria se não existir. Duas confirmações do mesmo e-mail novo ao
+ * mesmo tempo (dois cliques no mesmo link, duas abas) veriam ambas `existing === null` e as duas
+ * tentariam criar — sem isto, a segunda propagaria o erro cru de UNIQUE em vez de simplesmente
+ * usar a linha que a primeira acabou de criar.
+ */
+export async function findOrCreateUserByEmail(
+  db: Database,
+  input: { email: string; emailNormalized: string; role?: User["role"] },
+): Promise<User> {
+  const existing = await findUserByEmailNormalized(db, input.emailNormalized);
+  if (existing) return existing;
+  try {
+    return await createUser(db, input);
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+    const createdByOther = await findUserByEmailNormalized(
+      db,
+      input.emailNormalized,
+    );
+    if (!createdByOther) throw error;
+    return createdByOther;
+  }
 }
 
 export async function setNickname(
