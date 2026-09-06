@@ -1,15 +1,18 @@
 import { and, eq, isNull } from "drizzle-orm";
 
 import type { Database } from "@/lib/db/client";
-import { isUniqueConstraintError } from "@/lib/db/errors";
+import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import { curatedLinks } from "@/lib/db/schema";
 import { newId } from "@/lib/ids";
 
 import { normalizeUrl } from "./url-normalize";
 
 export class DuplicateLinkError extends Error {
-  constructor(public readonly urlNormalized: string) {
+  readonly urlNormalized: string;
+
+  constructor(urlNormalized: string) {
     super(`link já cadastrado (URL normalizada): ${urlNormalized}`);
+    this.urlNormalized = urlNormalized;
   }
 }
 
@@ -51,8 +54,7 @@ export async function createLink(
         updatedAt: now,
       })
       .returning();
-    if (!row) throw new Error("falha ao criar link: nenhuma linha retornada");
-    return row;
+    return assertReturningRow(row, "link");
   } catch (error) {
     if (isUniqueConstraintError(error))
       throw new DuplicateLinkError(urlNormalized);

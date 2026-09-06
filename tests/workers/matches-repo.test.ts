@@ -2,7 +2,11 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { getDb } from "@/lib/db/client";
-import { isCheckConstraintError } from "@/lib/db/errors";
+import {
+  isCheckConstraintError,
+  isUniqueConstraintError,
+} from "@/lib/db/errors";
+import { matches } from "@/lib/db/schema";
 import { createMatch, findNextMatch } from "@/modules/partidas/matches.repo";
 
 // D1 é compartilhado entre os `it()` deste arquivo (só é reaplicado do zero por arquivo, ver
@@ -86,5 +90,45 @@ describe("matches.repo: próximo jogo por kickoff_at", () => {
     }
     expect(caught).toBeDefined();
     expect(isCheckConstraintError(caught)).toBe(true);
+  });
+
+  it("uma violação de UNIQUE em slug é classificada como tal (mesmo mecanismo de link/lead)", async () => {
+    // buildMatchSlug depende de um id aleatório, então forçar a colisão pelo createMatch público
+    // não é prático; insere direto pelo schema para provar que o classificador genérico
+    // (isUniqueConstraintError) reconhece a violação também na coluna `slug`, não só em
+    // url_normalized/value_normalized (já testados em links-repo.test.ts/leads-repo.test.ts).
+    const now = new Date();
+    await db.insert(matches).values({
+      id: "aaaaaaaa-0000-0000-0000-000000000000",
+      slug: "vasco-x-slug-fixo-teste",
+      competition: "Teste",
+      opponentName: "Slug Fixo FC",
+      homeAway: "casa",
+      kickoffAt: null,
+      kickoffPrecision: "indefinido",
+      status: "indefinido",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    let caught: unknown;
+    try {
+      await db.insert(matches).values({
+        id: "bbbbbbbb-0000-0000-0000-000000000000",
+        slug: "vasco-x-slug-fixo-teste",
+        competition: "Teste",
+        opponentName: "Slug Fixo FC 2",
+        homeAway: "casa",
+        kickoffAt: null,
+        kickoffPrecision: "indefinido",
+        status: "indefinido",
+        createdAt: now,
+        updatedAt: now,
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeDefined();
+    expect(isUniqueConstraintError(caught)).toBe(true);
   });
 });

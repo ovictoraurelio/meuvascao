@@ -25,3 +25,14 @@ export function isUniqueConstraintError(error: unknown): boolean {
 export function isCheckConstraintError(error: unknown): boolean {
   return fullErrorText(error).includes("CHECK constraint failed");
 }
+
+/**
+ * `.returning()` do Drizzle tipa o resultado como array possivelmente vazio mesmo num INSERT de
+ * uma linha só; na prática só fica vazio se a linha nem chegou a ser criada. Centraliza a checagem
+ * e a mensagem de erro que os três repositórios (matches, curated_links, leads) repetiam iguais.
+ */
+export function assertReturningRow<T>(row: T | undefined, entity: string): T {
+  if (!row)
+    throw new Error(`falha ao criar ${entity}: nenhuma linha retornada`);
+  return row;
+}

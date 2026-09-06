@@ -1,11 +1,21 @@
-import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/lib/db/client";
+import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import { matches } from "@/lib/db/schema";
 import { newId } from "@/lib/ids";
 
 import { buildMatchSlug } from "./slug";
 import type { MatchStatus } from "./match-state";
+
+export class DuplicateSlugError extends Error {
+  readonly slug: string;
+
+  constructor(slug: string) {
+    super(`slug de jogo já existe: ${slug}`);
+    this.slug = slug;
+  }
+}
 
 export interface CreateMatchInput {
   opponentName: string;
@@ -34,32 +44,41 @@ export async function createMatch(
   input: CreateMatchInput,
 ): Promise<Match> {
   const id = newId();
+  const slug = buildMatchSlug(input.opponentName, id);
   const now = new Date();
-  const [row] = await db
-    .insert(matches)
-    .values({
-      id,
-      slug: buildMatchSlug(input.opponentName, id),
-      competition: input.competition,
-      round: input.round,
-      opponentName: input.opponentName,
-      homeAway: input.homeAway,
-      kickoffAt: input.kickoffAt,
-      kickoffPrecision: input.kickoffPrecision,
-      venue: input.venue,
-      status: input.status,
-      scoreVasco: input.scoreVasco,
-      scoreOpponent: input.scoreOpponent,
-      sourceName: input.sourceName,
-      sourceUrl: input.sourceUrl,
-      notes: input.notes,
-      updatedBy: input.updatedBy,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning();
-  if (!row) throw new Error("falha ao criar jogo: nenhuma linha retornada");
-  return row;
+  try {
+    const [row] = await db
+      .insert(matches)
+      .values({
+        id,
+        slug,
+        competition: input.competition,
+        round: input.round,
+        opponentName: input.opponentName,
+        homeAway: input.homeAway,
+        kickoffAt: input.kickoffAt,
+        kickoffPrecision: input.kickoffPrecision,
+        venue: input.venue,
+        status: input.status,
+        scoreVasco: input.scoreVasco,
+        scoreOpponent: input.scoreOpponent,
+        sourceName: input.sourceName,
+        sourceUrl: input.sourceUrl,
+        notes: input.notes,
+        updatedBy: input.updatedBy,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return assertReturningRow(row, "jogo");
+  } catch (error) {
+    // Praticamente impossível (colisão nos 6 caracteres do id que compõem o slug), mas do mesmo
+    // jeito que link e lead: uma violação de UNIQUE vira erro de domínio, nunca o erro cru do
+    // driver. Um CHECK violado (encerrado sem placar) não é capturado aqui de propósito — é um
+    // erro de programação de quem chamou, não um caso de negócio esperado como a duplicata.
+    if (isUniqueConstraintError(error)) throw new DuplicateSlugError(slug);
+    throw error;
+  }
 }
 
 export async function findMatchBySlug(
@@ -85,11 +104,7 @@ export async function findNextMatch(db: Database): Promise<Match | null> {
     .where(
       and(
         isNull(matches.deletedAt),
-        or(
-          eq(matches.status, "agendado"),
-          eq(matches.status, "adiado"),
-          eq(matches.status, "indefinido"),
-        ),
+        inArray(matches.status, ["agendado", "adiado", "indefinido"]),
       ),
     )
     .orderBy(sql`${matches.kickoffAt} is null`, asc(matches.kickoffAt))

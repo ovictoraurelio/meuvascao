@@ -1,4 +1,4 @@
-import { isUniqueConstraintError } from "@/lib/db/errors";
+import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import type { Database } from "@/lib/db/client";
 import { leads } from "@/lib/db/schema";
 import { newId } from "@/lib/ids";
@@ -6,8 +6,11 @@ import { newId } from "@/lib/ids";
 import { normalizeLeadValue, type LeadChannel } from "./lead-value-normalize";
 
 export class DuplicateLeadError extends Error {
-  constructor(public readonly valueNormalized: string) {
+  readonly valueNormalized: string;
+
+  constructor(valueNormalized: string) {
     super(`contato já cadastrado: ${valueNormalized}`);
+    this.valueNormalized = valueNormalized;
   }
 }
 
@@ -43,8 +46,7 @@ export async function createLead(
         updatedAt: now,
       })
       .returning();
-    if (!row) throw new Error("falha ao criar lead: nenhuma linha retornada");
-    return row;
+    return assertReturningRow(row, "lead");
   } catch (error) {
     if (isUniqueConstraintError(error))
       throw new DuplicateLeadError(valueNormalized);
