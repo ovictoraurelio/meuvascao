@@ -6,7 +6,9 @@ import { matches } from "@/lib/db/schema";
 import { newId } from "@/lib/ids";
 
 import { buildMatchSlug } from "./slug";
-import type { MatchStatus } from "./match-state";
+import { isUpcoming, MATCH_STATUSES, type MatchStatus } from "./match-state";
+
+const UPCOMING_STATUSES = MATCH_STATUSES.filter(isUpcoming);
 
 export class DuplicateSlugError extends Error {
   readonly slug: string;
@@ -104,7 +106,7 @@ export async function findNextMatch(db: Database): Promise<Match | null> {
     .where(
       and(
         isNull(matches.deletedAt),
-        inArray(matches.status, ["agendado", "adiado", "indefinido"]),
+        inArray(matches.status, UPCOMING_STATUSES),
       ),
     )
     .orderBy(sql`${matches.kickoffAt} is null`, asc(matches.kickoffAt))
