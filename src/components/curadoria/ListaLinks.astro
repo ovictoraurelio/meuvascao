@@ -1,0 +1,112 @@
+---
+import { formatBRT } from "@/lib/time/brt";
+
+const LABEL_TEXT: Record<string, string> = {
+  noticia: "Notícia",
+  opiniao: "Opinião",
+  rumor: "Rumor",
+  video: "Vídeo",
+  podcast: "Podcast",
+};
+
+// Forma estrutural, não importada de @/modules/curadoria: componentes de apresentação não
+// importam módulos de domínio (eslint no-restricted-imports), mesmo só para o tipo.
+interface LinkCurado {
+  url: string;
+  title: string;
+  sourceName: string;
+  label: string;
+  publishedAt: Date | null;
+  createdAt: Date;
+}
+
+interface Props {
+  heading: string;
+  links: LinkCurado[];
+  testId: string;
+  // Sem uma discussão por link (fora do escopo da v1): "Comentar" leva à mesma resenha central
+  // do próximo jogo. Sem próximo jogo cadastrado, só "Ler na fonte" aparece.
+  comentarHref: string | null;
+}
+
+const { heading, links, testId, comentarHref } = Astro.props;
+---
+
+<section aria-label={heading}>
+  <h2>{heading}</h2>
+  {
+    links.length === 0 ? (
+      <p>Ainda não há links cadastrados aqui.</p>
+    ) : (
+      <ul data-testid={testId}>
+        {links.map((link) => (
+          <li>
+            <p class="rotulo">{LABEL_TEXT[link.label] ?? link.label}</p>
+            <p class="titulo">{link.title}</p>
+            <p class="meta">
+              {link.sourceName} ·{" "}
+              {formatBRT(link.publishedAt ?? link.createdAt)}
+            </p>
+            <div class="acoes">
+              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                Ler na fonte
+              </a>
+              {comentarHref && <a href={comentarHref}>Comentar</a>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</section>
+
+<style>
+  h2 {
+    font-size: var(--type-lg);
+    margin-block-end: var(--space-2);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-block-end: var(--space-4);
+    border-block-end: 1px solid var(--color-paper-muted);
+  }
+
+  .rotulo {
+    font-size: var(--type-xs);
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .titulo {
+    font-family: var(--font-display);
+    font-size: var(--type-md);
+    font-weight: var(--font-display-weight);
+  }
+
+  .meta {
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+  }
+
+  .acoes {
+    display: flex;
+    gap: var(--space-4);
+    margin-block-start: var(--space-1);
+  }
+
+  .acoes a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--size-tap-target-min);
+  }
+</style>

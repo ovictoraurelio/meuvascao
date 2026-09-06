@@ -1,0 +1,127 @@
+---
+import { getRequestDb } from "@/lib/db/client";
+import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
+import { formatBRT } from "@/lib/time/brt";
+import { findMatchBySlug } from "@/modules/partidas";
+import Base from "../../layouts/Base.astro";
+
+const { slug } = Astro.params;
+const db = getRequestDb();
+const match = slug ? await findMatchBySlug(db, slug) : null;
+
+if (!match) {
+  return Astro.rewrite("/404");
+}
+
+const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
+  casa: "em casa",
+  fora: "fora de casa",
+  neutro: "em campo neutro",
+};
+---
+
+<Base
+  title={`Vasco x ${match.opponentName} — Meu Vascão`}
+  description={`${match.competition}: Vasco ${LOCAL_TEXT[match.homeAway]} contra ${match.opponentName}.`}
+  active="jogos"
+>
+  <article class="jogo">
+    <p class="competicao">{match.competition}</p>
+    <h1>
+      Vasco {match.homeAway === "casa" ? "x" : "×"}
+      {match.opponentName}
+    </h1>
+    {
+      MATCH_STATUS_LABEL[match.status] && (
+        <p class="status">{MATCH_STATUS_LABEL[match.status]}</p>
+      )
+    }
+    <p class="horario">
+      {
+        match.kickoffPrecision === "confirmado" && match.kickoffAt
+          ? formatBRT(match.kickoffAt)
+          : "Horário a confirmar"
+      }
+      {match.venue && ` · ${match.venue}`}
+    </p>
+    {
+      match.status === "encerrado" && (
+        <p data-testid="placar" class="placar">
+          Vasco {match.scoreVasco} x {match.scoreOpponent} {match.opponentName}
+        </p>
+      )
+    }
+    {
+      match.sourceName && (
+        <p class="fonte">
+          Fonte: {match.sourceName}
+          {match.sourceUrl && (
+            <>
+              {" "}
+              ·{" "}
+              <a
+                href={match.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ler na fonte
+              </a>
+            </>
+          )}
+        </p>
+      )
+    }
+    <p class="atualizacao">
+      Última atualização: {formatBRT(match.updatedAt)}
+    </p>
+
+    <section id="comentar" class="resenha">
+      <h2>Resenha</h2>
+      <p>A resenha começa no primeiro comentário.</p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .jogo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .competicao {
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status {
+    display: inline-block;
+    align-self: flex-start;
+    padding-inline: var(--space-2);
+    font-size: var(--type-sm);
+    color: var(--color-paper);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+
+  .placar {
+    font-family: var(--font-display);
+    font-size: var(--type-2xl);
+    font-weight: var(--font-display-weight);
+  }
+
+  .fonte,
+  .atualizacao {
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+  }
+
+  .resenha {
+    margin-block-start: var(--space-6);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--color-paper-muted);
+  }
+</style>

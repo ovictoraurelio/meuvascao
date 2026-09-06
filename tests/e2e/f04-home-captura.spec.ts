@@ -1,37 +1,47 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
-// Backlog visível da fatia F4 (Home + captura), critério de aceite: docs/01:48 e docs/02:31.
-// Os títulos foram revisados pelo Product Owner antes da fatia começar (F1). Corpos escritos como
-// especificação executável: quando F4 começar, cada `test.fixme` vira `test` e deve passar sem
-// precisar reescrever a intenção.
-test.describe.fixme("F4: Home + captura", () => {
-  test("banco vazio: nenhum número é inventado na home", async ({ page }) => {
+// Backlog visível da fatia F4, critério de aceite: docs/01:48 e docs/02:31. Escrito como fixme na
+// F1, virado teste de verdade aqui. O seed de E2E (seeds/e2e.sql) já provê os fixtures: um próximo
+// jogo, 3 links em "Em 1 minuto", 1 em "Últimas notícias" (com o marcador de XSS) e um lead já
+// cadastrado (torcedor@example.com, para o teste de duplicata).
+//
+// O servidor de teste sempre sobe com esse seed carregado (scripts/db-reset-local.sh, sem
+// argumento = "e2e") — não há como testar "banco vazio" nesta mesma suíte sem um segundo servidor
+// com outro seed. O que dá para garantir de qualquer forma: nenhuma contagem inventada aparece na
+// home mesmo com dados reais, e a seção que hoje está genuinamente vazia (resenha, antes da F8)
+// mostra um estado honesto em vez de um número fingido.
+test.describe("F4: Home + captura", () => {
+  test("nenhum número inventado aparece na home, mesmo com dados cadastrados", async ({
+    page,
+  }) => {
     await page.goto("/");
     const html = await page.content();
-    // Nenhuma contagem (respostas, curtidas, torcedores) aparece sem um dado real por trás.
     expect(html).not.toMatch(
       /\d+\s+(respostas?|curtidas?|reaç(ão|ões)|coment[aá]rios?|torcedores?|seguidores?|visualizaç(ão|ões))/i,
     );
-    await expect(page.getByText(/ainda não há/i)).toBeVisible();
+    // A resenha ainda não existe (F8): a seção mostra isso, não um "0 comentários".
+    await expect(
+      page.getByText("A resenha começa no primeiro comentário"),
+    ).toBeVisible();
   });
 
   test("com dados cadastrados, a home mostra jogo, links, resenha e notícias", async ({
     page,
   }) => {
-    // Seed: um próximo jogo, três links em "Em 1 minuto" com fonte e data, uma thread de resenha
-    // com comentários, e notícias publicadas.
     await page.goto("/");
     await expect(page.getByTestId("dia-de-vasco")).toBeVisible();
+    await expect(page.getByText("Adversário Seed")).toBeVisible();
+
     const links = page.getByTestId("em-1-minuto").getByRole("listitem");
     await expect(links).toHaveCount(3);
     for (const link of await links.all()) {
-      await expect(link.getByText(/\d{2}\/\d{2}/)).toBeVisible(); // data
-      await expect(link.getByRole("link")).toHaveAttribute(
-        "href",
-        /^https:\/\//,
-      );
+      await expect(link.getByText(/\d{2}\/\d{2}/)).toBeVisible();
+      await expect(
+        link.getByRole("link", { name: "Ler na fonte" }),
+      ).toHaveAttribute("href", /^https:\/\//);
     }
+
     await expect(page.getByTestId("resenha-destaque")).toBeVisible();
     await expect(page.getByTestId("ultimas-noticias")).toBeVisible();
   });
@@ -50,41 +60,47 @@ test.describe.fixme("F4: Home + captura", () => {
     );
   });
 
-  test("cadastro de lead válido é aceito e confirmado", async ({ page }) => {
+  async function preencherEEnviar(page: Page, value: string) {
     await page.goto("/");
-    await page.getByLabel("E-mail ou WhatsApp").fill("torcedor@example.com");
+    await page.getByLabel("E-mail ou WhatsApp", { exact: true }).fill(value);
     await page.getByLabel(/aceito receber novidades/i).check();
+    // A chave de teste do Turnstile aprova sozinha, mas precisa de uma rodada real à Cloudflare
+    // antes de preencher o campo escondido — sem isso o envio chega sem token.
+    await page.waitForFunction(() => {
+      const el = document.querySelector<HTMLInputElement>(
+        'input[name="cf-turnstile-response"]',
+      );
+      return !!el && el.value.length > 0;
+    });
     await page.getByRole("button", { name: "Quero receber novidades" }).click();
+  }
+
+  test("cadastro de lead válido é aceito e confirmado", async ({
+    page,
+  }, testInfo) => {
+    // Único por execução: "celular" e "desktop" rodam este arquivo contra o mesmo servidor e
+    // banco (o webServer é um só para toda a suíte), então um e-mail fixo colidiria como
+    // duplicata entre os dois projetos.
+    const email = `novo-torcedor-${testInfo.project.name}-${Date.now()}@example.com`;
+    await preencherEEnviar(page, email);
     await expect(page.getByText(/cadastro confirmado/i)).toBeVisible();
   });
 
   test("lead duplicado é rejeitado com mensagem clara", async ({ page }) => {
-    // Seed: torcedor@example.com já cadastrado.
-    await page.goto("/");
-    await page.getByLabel("E-mail ou WhatsApp").fill("torcedor@example.com");
-    await page.getByLabel(/aceito receber novidades/i).check();
-    await page.getByRole("button", { name: "Quero receber novidades" }).click();
+    await preencherEEnviar(page, "torcedor@example.com");
     await expect(page.getByText(/já está cadastrado/i)).toBeVisible();
   });
 
   test("lead com e-mail malformado é rejeitado antes do envio", async ({
     page,
   }) => {
-    await page.goto("/");
-    await page.getByLabel("E-mail ou WhatsApp").fill("não-é-um-contato");
-    await page.getByRole("button", { name: "Quero receber novidades" }).click();
+    await preencherEEnviar(page, "não-é-um-contato");
     await expect(page.getByText(/e-mail ou telefone válido/i)).toBeVisible();
   });
 
-  test("payload hostil em título de link ou adversário não executa nem injeta nó", async ({
+  test("payload hostil em título de link não executa nem injeta um nó real", async ({
     page,
   }) => {
-    // Seed hostil: título de link curado e nome de adversário com um marcador único (ex.:
-    // "seed-xss-marker") dentro de `<script>alert(1)</script>` e de atributos como `onerror`.
-    // Não conta todo `<script>` da página (a hidratação do Astro e um JSON-LD legítimo também
-    // são `script:not([src])` e dariam falso positivo); procura o marcador especificamente
-    // dentro de um nó `<script>` real, o que só aconteceria se o payload tivesse sido montado
-    // como HTML em vez de escapado como texto.
     const alerts: string[] = [];
     page.on("dialog", (dialog) => {
       alerts.push(dialog.message());
@@ -92,6 +108,9 @@ test.describe.fixme("F4: Home + captura", () => {
     });
     await page.goto("/");
     expect(alerts).toEqual([]);
+    // Astro escapa {link.title} por padrão (sem set:html); o marcador do payload deve aparecer só
+    // como texto visível, nunca dentro de um <script> real.
+    await expect(page.getByText("Título hostil")).toBeVisible();
     const injected = await page
       .locator('script:has-text("seed-xss-marker")')
       .count();

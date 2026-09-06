@@ -24,8 +24,11 @@ VALUES ('e2e00000-0000-0000-0000-000000000004', 'vasco-x-adversario-encerrado', 
 INSERT INTO curated_links (id, url, url_normalized, title, source_name, label, slot, position, status, curated_by, created_at, updated_at)
 VALUES ('e2e00001-0000-0000-0000-000000000001', 'https://exemplo.com/noticia-1', 'https://exemplo.com/noticia-1', 'Notícia de exemplo do dia', 'Fonte Exemplo', 'noticia', 'em1minuto', 1, 'publicado', 'seed', 1788220800000, 1788220800000);
 
+INSERT INTO curated_links (id, url, url_normalized, title, source_name, label, published_at, slot, position, status, curated_by, created_at, updated_at)
+VALUES ('e2e00001-0000-0000-0000-000000000002', 'https://exemplo.com/rumor-da-semana', 'https://exemplo.com/rumor-da-semana', 'Rumor da semana (exemplo)', 'Fonte Exemplo', 'rumor', 1788220800000, 'em1minuto', 2, 'publicado', 'seed', 1788220800000, 1788220800000);
+
 INSERT INTO curated_links (id, url, url_normalized, title, source_name, label, slot, position, status, curated_by, created_at, updated_at)
-VALUES ('e2e00001-0000-0000-0000-000000000002', 'https://exemplo.com/rumor-da-semana', 'https://exemplo.com/rumor-da-semana', 'Rumor da semana (exemplo)', 'Fonte Exemplo', 'rumor', 'em1minuto', 2, 'publicado', 'seed', 1788220800000, 1788220800000);
+VALUES ('e2e00001-0000-0000-0000-000000000004', 'https://exemplo.com/opiniao-do-dia', 'https://exemplo.com/opiniao-do-dia', 'Opinião de exemplo sobre o próximo jogo', 'Fonte Exemplo', 'opiniao', 'em1minuto', 3, 'publicado', 'seed', 1788220800000, 1788220800000);
 
 INSERT INTO curated_links (id, url, url_normalized, title, source_name, label, slot, position, status, curated_by, created_at, updated_at)
 VALUES ('e2e00001-0000-0000-0000-000000000003', 'https://exemplo.com/payload-hostil', 'https://exemplo.com/payload-hostil', '<script>window.__seedXss=1</script><span data-seed-xss-marker>Título hostil</span>', 'Fonte Exemplo', 'noticia', 'ultimas', 1, 'publicado', 'seed', 1788220800000, 1788220800000);
