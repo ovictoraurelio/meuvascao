@@ -36,3 +36,16 @@ VALUES ('e2e00001-0000-0000-0000-000000000003', 'https://exemplo.com/payload-hos
 -- Lead já cadastrado, usado pelo teste de duplicidade em tests/e2e/f04-home-captura.spec.ts.
 INSERT INTO leads (id, channel, value, value_normalized, source_page, privacy_version, consented_at, ip_hash, created_at, updated_at)
 VALUES ('e2e00002-0000-0000-0000-000000000001', 'email', 'torcedor@example.com', 'torcedor@example.com', '/', '2026-01-01', 1788220800000, 'seed-hash', 1788220800000, 1788220800000);
+
+-- Usuário já com apelido escolhido, para o teste de apelido duplicado em
+-- tests/e2e/f06-conta-sessao.spec.ts.
+INSERT INTO users (id, email, email_normalized, nickname, nickname_normalized, role, status, created_at, updated_at)
+VALUES ('e2e00003-0000-0000-0000-000000000001', 'cartoleiro@example.com', 'cartoleiro@example.com', 'Cartoleiro', 'cartoleiro', 'torcedor', 'active', 1788220800000, 1788220800000);
+
+-- Um token por projeto do Playwright ("celular"/"desktop" compartilham o mesmo webServer/D1 e um
+-- token só pode ser consumido uma vez): hash SHA-256 de "seed-valido-<projeto>", ainda não usado,
+-- expira em 2100. Permite testar /entrar/confirmar?token=seed-valido-<projeto> sem pedido real.
+INSERT INTO auth_tokens (id, email_normalized, token_hash, expires_at, created_at)
+VALUES
+  ('e2e00004-0000-0000-0000-000000000001', 'novo-torcedor-celular@example.com', '9e6abe6c03f7e3e60e3f9e9dac3e4ca0464094b377ea97b703a374a658b81b8e', 4102444800000, 1788220800000),
+  ('e2e00004-0000-0000-0000-000000000002', 'novo-torcedor-desktop@example.com', 'e03331fd30f0da7e1c43e943bafdce95729d04cb051941f90d49733b6c2fe7aa', 4102444800000, 1788220800000);

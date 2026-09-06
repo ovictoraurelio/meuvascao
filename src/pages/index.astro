@@ -2,11 +2,11 @@
 import { actions } from "astro:actions";
 
 import { getRequestDb } from "@/lib/db/client";
-import { getTurnstileSiteKey } from "@/lib/turnstile";
 import { listPublishedBySlot } from "@/modules/curadoria";
 import { findNextMatch } from "@/modules/partidas";
 import CartaoProximoJogo from "../components/partidas/CartaoProximoJogo.astro";
 import ListaLinks from "../components/curadoria/ListaLinks.astro";
+import Turnstile from "../components/ui/Turnstile.astro";
 import Base from "../layouts/Base.astro";
 
 const db = getRequestDb();
@@ -83,7 +83,7 @@ const semDadosNenhum =
           Aceito receber novidades do Meu Vascão por e-mail ou WhatsApp
         </label>
 
-        <div class="cf-turnstile" data-sitekey={getTurnstileSiteKey()}></div>
+        <Turnstile />
 
         <button type="submit">Quero receber novidades</button>
       </form>
@@ -98,12 +98,6 @@ const semDadosNenhum =
     </section>
   </div>
 </Base>
-
-<script
-  is:inline
-  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-  async
-  defer></script>
 
 <style>
   .home {

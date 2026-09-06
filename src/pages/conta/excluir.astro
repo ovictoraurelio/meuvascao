@@ -1,0 +1,65 @@
+---
+import { actions } from "astro:actions";
+
+import { getRequestDb } from "@/lib/db/client";
+import { getAuthenticatedUser } from "@/modules/identidade";
+import Base from "../../layouts/Base.astro";
+
+const result = Astro.getActionResult(actions.identidade.excluirConta);
+
+// A exclusão bem-sucedida revoga a própria sessão que está renderizando este resultado — checar
+// autenticação antes do resultado da action redirecionaria de volta para /entrar sem nunca
+// mostrar a confirmação. Só exige sessão válida para a tela de "antes" (o botão de confirmar).
+if (!result?.data?.ok) {
+  const db = getRequestDb();
+  const authenticated = await getAuthenticatedUser(db, Astro.locals.session);
+  if (!authenticated) {
+    return Astro.redirect(
+      `/entrar?redirect=${encodeURIComponent(Astro.url.pathname)}`,
+    );
+  }
+}
+---
+
+<Base
+  title="Excluir conta — Meu Vascão"
+  description="Excluir sua conta do Meu Vascão."
+>
+  <div class="excluir">
+    <h1>Excluir conta</h1>
+    {
+      result?.data?.ok ? (
+        <p role="status">Conta excluída. Seu apelido foi anonimizado.</p>
+      ) : (
+        <>
+          <p>
+            Isso remove seu e-mail e anonimiza seu apelido. Seus comentários
+            continuam visíveis, marcados como "removido pelo autor".
+          </p>
+          <form method="POST" action={actions.identidade.excluirConta}>
+            <button type="submit">Confirmar exclusão</button>
+          </form>
+          {result?.error && <p role="alert">{result.error.message}</p>}
+        </>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .excluir {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+  }
+
+  button {
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-4);
+    color: var(--color-paper);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+</style>
