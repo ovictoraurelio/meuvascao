@@ -40,6 +40,6 @@ test.describe.fixme("F10: Institucionais, SEO e descoberta", () => {
     page,
   }) => {
     await page.goto("/regras-da-resenha");
-    await expect(page.getByText(/versão \d{4}-\d{2}-\d{2}/)).toBeVisible();
+    await expect(page.getByText(/versão \d{4}-\d{2}-\d{2}/i)).toBeVisible();
   });
 });

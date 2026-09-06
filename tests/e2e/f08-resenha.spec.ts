@@ -11,7 +11,13 @@ test.describe.fixme("F8: Resenha", () => {
     await page.goto("/jogos/vasco-x-adversario-seed");
     await page.getByLabel("Seu comentário").fill("Grande jogo do Vasco hoje!");
     const publicar = page.getByRole("button", { name: "Publicar" });
-    await Promise.all([publicar.click(), publicar.click()]);
+    // dispatchEvent, não click(): um segundo clique real espera a actionability do Playwright
+    // (visível/estável/habilitado), e um botão que se desabilita no primeiro clique — a defesa
+    // óbvia contra duplo envio — faria essa espera estourar em vez de exercitar a corrida real.
+    await Promise.all([
+      publicar.dispatchEvent("click"),
+      publicar.dispatchEvent("click"),
+    ]);
     await expect(page.getByText("Grande jogo do Vasco hoje!")).toHaveCount(1);
   });
 

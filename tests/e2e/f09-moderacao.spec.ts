@@ -27,7 +27,11 @@ test.describe.fixme("F9: Moderação", () => {
 
   test("torcedor comum acessando /admin recebe 403 e a página não é indexada", async ({
     page,
+    request,
   }) => {
+    const direct = await request.get("/admin");
+    expect(direct.status()).toBe(403);
+
     await page.goto("/admin");
     await expect(page.getByText(/acesso não autorizado/i)).toBeVisible();
     const robots = await page

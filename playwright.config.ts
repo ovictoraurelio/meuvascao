@@ -34,8 +34,10 @@ export default defineConfig({
       use: { ...devices["Galaxy S24"] },
     },
     {
+      // Gates sem lógica dependente de viewport (axe, font-size) também rodam aqui; os que só
+      // fazem sentido em 360 px (tap-targets, viewport-360) se autoexcluem via `test.skip`.
       name: "desktop",
-      testMatch: ["e2e/**/*.spec.ts"],
+      testMatch: ["e2e/**/*.spec.ts", "gates/**/*.spec.ts"],
       testIgnore: ["**/*.api.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
