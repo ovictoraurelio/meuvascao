@@ -1,0 +1,87 @@
+---
+import Base from "./Base.astro";
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<Base
+  title={`${title} — Meu Vascão`}
+  description="Administração editorial do Meu Vascão."
+>
+  <section class="admin">
+    <nav aria-label="Administração">
+      <a href="/admin/jogos">Jogos</a><a href="/admin/links">Links</a><a
+        href="/admin/leads">Contatos</a
+      >
+    </nav>
+    <h1>{title}</h1><slot />
+  </section>
+</Base>
+<style is:global>
+  .admin {
+    padding: var(--space-4);
+    max-inline-size: 60rem;
+    margin-inline: auto;
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .admin nav {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .admin nav a,
+  .admin button {
+    min-block-size: var(--size-tap-target-min);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .admin form {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .admin label {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .admin input,
+  .admin select,
+  .admin textarea {
+    min-block-size: var(--size-tap-target-min);
+    border: 1px solid var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .admin button {
+    background: var(--color-accent);
+    color: var(--color-paper);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm);
+    justify-content: center;
+  }
+
+  .admin article {
+    padding: var(--space-4);
+    border: 1px solid var(--color-ink-muted);
+    display: grid;
+    gap: var(--space-3);
+    overflow-wrap: anywhere;
+  }
+
+  .admin ul {
+    display: grid;
+    gap: var(--space-4);
+    list-style: none;
+    padding: 0;
+  }
+</style>

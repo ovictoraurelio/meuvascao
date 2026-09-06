@@ -4,12 +4,16 @@ import AxeBuilder from "@axe-core/playwright";
 test.describe("F7: Administração — agenda e curadoria", () => {
   async function login(page: Page, role = "editor") {
     const response = await page.request.post("/auth/dev-login", {
+      headers: { Origin: "http://127.0.0.1:8788" },
       form: {
         nickname: `Equipe${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
         role,
       },
     });
-    expect(response.ok()).toBeTruthy();
+    expect(
+      response.ok(),
+      `${response.status()} ${await response.text()}`,
+    ).toBeTruthy();
   }
   async function createGame(page: Page, name: string) {
     await page.goto("/admin/jogos/novo");
@@ -18,7 +22,9 @@ test.describe("F7: Administração — agenda e curadoria", () => {
     await page.getByLabel("Fonte", { exact: true }).fill("Fonte editorial");
     await page.getByLabel("URL da fonte").fill("https://example.com/agenda");
     await page.getByRole("button", { name: "Salvar", exact: true }).click();
-    await expect(page).not.toHaveURL(/\/novo$/);
+    await expect(
+      page.getByRole("heading", { name: `Editar jogo: ${name}`, exact: true }),
+    ).toBeVisible();
     return page.url();
   }
   async function createLink(page: Page, name: string) {
@@ -40,7 +46,9 @@ test.describe("F7: Administração — agenda e curadoria", () => {
     const name = `Time ${info.project.name} ${Date.now()}`;
     await createGame(page, name);
     await page.goto("/jogos");
-    await expect(page.getByText(name, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: new RegExp(name) }),
+    ).toBeVisible();
   });
   test("adiar e editar horário preserva slug; registrar resultado encerra o jogo", async ({
     page,
@@ -49,7 +57,9 @@ test.describe("F7: Administração — agenda e curadoria", () => {
       page,
       `Adiado ${info.project.name} ${Date.now()}`,
     );
-    await page.getByLabel("Estado", { exact: true }).selectOption("adiado");
+    await page
+      .getByRole("combobox", { name: "Estado", exact: true })
+      .selectOption("adiado");
     await page.getByLabel("Horário de Brasília").fill("2026-10-15T18:30");
     await page.getByLabel("Observações / motivo").fill("Chuva forte no Rio");
     await page.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -57,7 +67,9 @@ test.describe("F7: Administração — agenda e curadoria", () => {
     await expect(
       page.getByText("adiado", { exact: true }).first(),
     ).toBeVisible();
-    await page.getByLabel("Estado", { exact: true }).selectOption("encerrado");
+    await page
+      .getByRole("combobox", { name: "Estado", exact: true })
+      .selectOption("encerrado");
     await page.getByLabel("Placar Vasco").fill("2");
     await page.getByLabel("Placar adversário").fill("1");
     await page.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -104,6 +116,7 @@ test.describe("F7: Administração — agenda e curadoria", () => {
     ]) {
       const response = await page.request.post(`/_actions/admin.${name}`, {
         multipart: {},
+        headers: { Origin: "http://127.0.0.1:8788" },
       });
       expect(response.status()).toBe(403);
     }

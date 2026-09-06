@@ -1,0 +1,87 @@
+---
+import { actions } from "astro:actions";
+import { getRequestDb } from "@/lib/db/client";
+import { listAdmin } from "@/modules/administracao";
+import Admin from "../../../layouts/Admin.astro";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+let data;
+try {
+  data = await listAdmin(getRequestDb(), Astro.locals.session);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+const result = Astro.getActionResult(actions.admin.publicarLink);
+if (result?.data) return Astro.redirect("/admin/links");
+const link = data.links.find((link) => link.id === Astro.params.id);
+if (!link && Astro.params.id !== "novo") return Astro.rewrite("/404");
+---
+
+<Admin title={link ? "Editar link" : "Novo link"}>
+  {result?.error && <p role="alert">{result.error.message}</p>}
+  <form method="POST" action={actions.admin.publicarLink}>
+    <input type="hidden" name="id" value={link?.id ?? ""} />
+    <label
+      >URL<input
+        name="url"
+        type="url"
+        required
+        value={link?.url ?? ""}
+      /></label
+    >
+    <label
+      >Título<input
+        name="title"
+        required
+        maxlength="200"
+        value={link?.title ?? ""}
+      /></label
+    >
+    <label
+      >Fonte<input
+        name="sourceName"
+        required
+        value={link?.sourceName ?? ""}
+      /></label
+    >
+    <label
+      >Rótulo<select name="label"
+        >{
+          ["noticia", "opiniao", "rumor", "video", "podcast"].map((label) => (
+            <option
+              value={label}
+              selected={label === (link?.label ?? "noticia")}
+            >
+              {label}
+            </option>
+          ))
+        }</select
+      ></label
+    >
+    <label
+      >Seção<select name="slot"
+        ><option value="ultimas" selected={!link || link.slot === "ultimas"}
+          >Últimas</option
+        ><option value="em1minuto" selected={link?.slot === "em1minuto"}
+          >Em 1 minuto</option
+        ></select
+      ></label
+    >
+    <label
+      >Posição<input
+        name="position"
+        type="number"
+        min="0"
+        max="9999"
+        value={link?.position ?? 0}
+      /></label
+    >
+    <button type="submit">Publicar</button>
+  </form>
+</Admin>
