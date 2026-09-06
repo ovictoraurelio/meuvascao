@@ -12,10 +12,10 @@ Cada onda produz código, testes ou uma decisão operacional verificável. Traba
 | ----- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | 1     | Recuperar F6 existente e conferir domínio, esquema e testes                            | Concluída; worktree F6 preservado                          |
 | 2     | Validar baseline F6 e revisar segurança                                                | Concluída; 175 testes unitários/banco e 64 E2E no baseline |
-| 3     | Corrigir Turnstile, sessão revogada, exclusão/exportação, envio preview e concorrência | Implementada em b0d54cb; aguardando aceite conjunto        |
+| 3     | Corrigir Turnstile, sessão revogada, exclusão/exportação, envio preview e concorrência | Concluída e aprovada em b0d54cb                            |
 | 4     | Administração de agenda e curadoria (F7)                                               | Planejada                                                  |
-| 5     | Páginas institucionais e descoberta (F10)                                              | Em preparação isolada                                      |
-| 6     | Backup, restauração e sonda operacional (F11 parcial)                                  | Em validação isolada                                       |
+| 5     | Páginas institucionais e descoberta (F10)                                              | Concluída; 18 E2E e revisão independente                   |
+| 6     | Backup, restauração e sonda operacional (F11 parcial)                                  | Concluída; 9 testes, ensaio D1 local e sonda remota        |
 | 7     | Resenha por jogo (F8)                                                                  | Planejada                                                  |
 | 8     | Moderação e controles operacionais (F9)                                                | Planejada                                                  |
 | 9     | Integrar e validar jornadas completas                                                  | Planejada                                                  |
@@ -30,4 +30,10 @@ Envio real de e-mail, chaves antibot, responsável/canal de privacidade, conteú
 
 ## Revisão do bloco 1
 
-Achados: fallback antibot inseguro, sender de preview inacessível, logout global com cookie revogado e limite de login não atômico. Correções cobertas por regressões; exclusão agora revoga sessões no mesmo batch e exportação inclui o e-mail do próprio usuário. Vuca informou check verde, 184 testes unitários/banco, um teste isolado do sender e 66 E2E verdes; 37 skips pertencem ao backlog ainda não implementado. Aceite independente pendente.
+Achados: fallback antibot inseguro, sender de preview inacessível, logout global com cookie revogado e limite de login não atômico. Correções cobertas por regressões; exclusão agora revoga sessões no mesmo batch e exportação inclui o e-mail do próprio usuário. Vuca informou check verde, 184 testes unitários/banco, um teste isolado do sender e 66 E2E verdes; 37 skips pertencem ao backlog ainda não implementado. Aceite independente concedido.
+
+## Revisão do bloco 2
+
+F7 aprovada em d1db5e7: papéis no servidor, auditoria em batch, datas válidas e exportação dos IDs efetivamente selecionados. Vuca validou 191 testes unitários/banco e 76 E2E. F10 passou em 18 E2E; F11 parcial passou em 9 testes e ensaio real de restore local. A sonda remota usa Origin válido para não confundir proteção CSRF com bloqueio do dev-login.
+
+Preparação antecipada de publicação: cadastro público fechado por padrão; middleware de produção com CSP/HSTS e rotas privadas no-store/noindex. CSS emitido externamente para funcionar com CSP; 8 testes HTTP/navegador em produção passaram. Preview do PR14 disponível e aprovado pela sonda.
