@@ -15,3 +15,7 @@ A foto do esboço era um estádio genérico. A atual é um registro de arquivo d
 ## Revisão
 
 Revisão independente de estrutura, acessibilidade, rotas e dados. Foram incorporadas as correções de prioridade mobile, rótulo do CTA e crédito da sobreposição da foto. Os testes existentes mantêm suas assertivas funcionais; seletores foram delimitados onde a navegação nova passou a oferecer outro link de entrada.
+
+## Validação
+
+Check completo e 235 testes unitários/D1 aprovados. A suíte integral passou em 116 testes de navegador, com 12 exclusões por ambiente/viewport; também passaram os nove gates de produção. O CI paralelo reproduziu a queda intermitente do servidor Wrangler já registrada na esteira anterior. A execução E2E agora usa um executor por padrão, como na validação local estável. Nenhuma assertiva, teste ou gate foi removido; concorrência das escritas continua exercitada nos testes D1.
