@@ -49,6 +49,8 @@ jobs:
       - if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
       - run: npm run test:e2e
+      - name: Dry-run do deploy (valida o bundle do Worker sem publicar)
+        run: npx wrangler deploy --dry-run --outdir .dry-run --config dist/server/wrangler.json
       - if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

@@ -31,7 +31,7 @@ Abrir http://localhost:4321. Comandos, versões e observações operacionais est
 
 ## Ambientes e deploy
 
-Desenvolvimento local sem conta. Preview e produção na Cloudflare, configurados em `wrangler.jsonc` (`env.preview` e `env.production`) e resolvidos no build por `npm run build:preview` / `build:production`. IDs de banco e segredos são preenchidos pelo fundador seguindo o runbook (fatia F12). Nenhum deploy é feito por agente.
+Desenvolvimento local sem conta. Preview e produção na Cloudflare, configurados em `wrangler.jsonc` (`env.preview` e `env.production`) e resolvidos no build por `npm run build:preview` / `build:production`. Entrega contínua em `.github/workflows/deploy.yml`: preview por PR e a cada merge em `main`; produção só manual, com aprovação. Configuração inicial e rollback em [docs/runbooks/deploy.md](docs/runbooks/deploy.md). Nenhum deploy em produção é feito por agente.
 
 ## Licença
 
