@@ -24,3 +24,9 @@ export function isProduction(current: Env = getEnv()): boolean {
 export function isDevelopment(current: Env = getEnv()): boolean {
   return current.ENVIRONMENT === "development";
 }
+
+/** Cadastros públicos só abrem com habilitação explícita fora de desenvolvimento. */
+export function publicSignupsEnabled(current: Env = getEnv()): boolean {
+  const flag = current.PUBLIC_SIGNUPS_ENABLED;
+  return flag === undefined ? isDevelopment(current) : flag === "true";
+}

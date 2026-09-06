@@ -1,10 +1,12 @@
 ---
 import { actions } from "astro:actions";
 
+import { publicSignupsEnabled } from "@/lib/env";
 import { safeRedirectTarget } from "@/lib/http/redirect-safe";
 import Turnstile from "../components/ui/Turnstile.astro";
 import Base from "../layouts/Base.astro";
 
+const signupsEnabled = publicSignupsEnabled();
 const redirectParam = safeRedirectTarget(
   Astro.url.searchParams.get("redirect"),
 );
@@ -17,24 +19,35 @@ const result = Astro.getActionResult(actions.identidade.pedirLinkMagico);
 >
   <div class="entrar">
     <h1>Entrar</h1>
-    <p>
-      Enviamos um link de acesso para o seu e-mail — sem senha para lembrar.
-    </p>
+    {
+      signupsEnabled ? (
+        <>
+          <p>
+            Enviamos um link de acesso para o seu e-mail — sem senha para
+            lembrar.
+          </p>
 
-    <form method="POST" action={actions.identidade.pedirLinkMagico}>
-      {
-        redirectParam && (
-          <input type="hidden" name="redirect" value={redirectParam} />
-        )
-      }
+          <form method="POST" action={actions.identidade.pedirLinkMagico}>
+            {redirectParam && (
+              <input type="hidden" name="redirect" value={redirectParam} />
+            )}
 
-      <label for="entrar-email">E-mail</label>
-      <input id="entrar-email" name="email" type="email" required />
+            <label for="entrar-email">E-mail</label>
+            <input id="entrar-email" name="email" type="email" required />
 
-      <Turnstile />
+            <Turnstile />
 
-      <button type="submit">Enviar link de acesso</button>
-    </form>
+            <button type="submit">Enviar link de acesso</button>
+          </form>
+        </>
+      ) : (
+        <p>
+          Acesso por e-mail temporariamente indisponível. Você pode acompanhar
+          os jogos e as notícias sem entrar.
+        </p>
+      )
+    }
+    <p>Consulte o <a href="/privacidade">aviso de privacidade</a>.</p>
 
     {result?.error && <p role="alert">{result.error.message}</p>}
     {

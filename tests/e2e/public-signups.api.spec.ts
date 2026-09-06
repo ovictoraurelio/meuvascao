@@ -11,8 +11,9 @@ for (const action of ["leads.cadastrar", "identidade.pedirLinkMagico"]) {
     request,
     baseURL,
   }) => {
+    if (!baseURL) throw new Error("Test server URL missing");
     const response = await request.post(`/_actions/${action}`, {
-      headers: { Origin: baseURL! },
+      headers: { Origin: baseURL },
       form: {},
     });
     expect(response.status()).toBe(503);

@@ -8,6 +8,7 @@
 // src/modules/identidade/session.ts) em vez de confiar no tipo.
 interface Env {
   SESSION_SECRET?: string;
+  PUBLIC_SIGNUPS_ENABLED?: string;
   RESEND_API_KEY?: string;
 }
 
