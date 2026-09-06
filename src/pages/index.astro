@@ -1,20 +1,168 @@
 ---
-import { getEnv } from "@/lib/env";
-import EstadoVazio from "../layouts/EstadoVazio.astro";
+import { actions } from "astro:actions";
 
-const { ENVIRONMENT } = getEnv();
+import { getDb } from "@/lib/db/client";
+import { getEnv } from "@/lib/env";
+import { getTurnstileSiteKey } from "@/lib/turnstile";
+import { listPublishedBySlot } from "@/modules/curadoria";
+import { findNextMatch } from "@/modules/partidas";
+import CartaoProximoJogo from "../components/partidas/CartaoProximoJogo.astro";
+import ListaLinks from "../components/curadoria/ListaLinks.astro";
+import Base from "../layouts/Base.astro";
+
+const db = getDb(getEnv().DB);
+const [nextMatch, em1Minuto, ultimasNoticias] = await Promise.all([
+  findNextMatch(db),
+  listPublishedBySlot(db, "em1minuto"),
+  listPublishedBySlot(db, "ultimas"),
+]);
+
+const comentarHref = nextMatch ? `/jogos/${nextMatch.slug}#comentar` : null;
+const result = Astro.getActionResult(actions.leads.cadastrar);
+const semDadosNenhum =
+  !nextMatch && em1Minuto.length === 0 && ultimasNoticias.length === 0;
 ---
 
-<EstadoVazio
+<Base
   title="Meu Vascão"
   description="Portal independente de torcedores do Vasco: dia de jogo, resenha e links curados."
   active="inicio"
-  heading="Meu Vascão"
-  message="Em construção. Ainda não há jogos, notícias ou resenha cadastrados."
 >
-  {
-    ENVIRONMENT !== "production" && (
-      <p>Ambiente: {ENVIRONMENT}. Esta página não é indexada.</p>
-    )
+  <div class="home">
+    <h1 class="visually-hidden">Meu Vascão</h1>
+    {
+      semDadosNenhum && (
+        <p class="aviso">
+          Ainda não há jogos, notícias ou resenha cadastrados.
+        </p>
+      )
+    }
+
+    <CartaoProximoJogo match={nextMatch} />
+
+    <ListaLinks
+      heading="Em 1 minuto"
+      links={em1Minuto}
+      testId="em-1-minuto"
+      comentarHref={comentarHref}
+    />
+
+    <section data-testid="resenha-destaque" aria-label="Resenha em destaque">
+      <h2>A torcida tá falando</h2>
+      <p>A resenha começa no primeiro comentário.</p>
+    </section>
+
+    <ListaLinks
+      heading="Últimas notícias"
+      links={ultimasNoticias}
+      testId="ultimas-noticias"
+      comentarHref={comentarHref}
+    />
+
+    <section class="captura" aria-label="Cadastro de novidades">
+      <h2>Quer saber na hora?</h2>
+      <form method="POST" action={actions.leads.cadastrar}>
+        <input type="hidden" name="sourcePage" value="/" />
+
+        <label for="lead-value">E-mail ou WhatsApp</label>
+        <input id="lead-value" name="value" type="text" required />
+
+        <div class="armadilha" aria-hidden="true">
+          <label for="lead-honeypot">Não preencha este campo</label>
+          <input
+            id="lead-honeypot"
+            name="honeypot"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+            data-allow-small-target="armadilha antibot: invisível de propósito, não é alvo de toque real"
+          />
+        </div>
+
+        <label class="consentimento">
+          <input type="checkbox" name="consent" />
+          Aceito receber novidades do Meu Vascão por e-mail ou WhatsApp
+        </label>
+
+        <div class="cf-turnstile" data-sitekey={getTurnstileSiteKey()}></div>
+
+        <button type="submit">Quero receber novidades</button>
+      </form>
+      {result?.error && <p role="alert">{result.error.message}</p>}
+      {
+        result?.data?.ok && (
+          <p role="status">
+            Cadastro confirmado! Em breve você recebe novidades do Vascão.
+          </p>
+        )
+      }
+    </section>
+  </div>
+</Base>
+
+<script
+  is:inline
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+  async
+  defer></script>
+
+<style>
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
   }
-</EstadoVazio>
+
+  .aviso {
+    padding-inline: var(--space-4);
+    color: var(--color-ink-muted);
+  }
+
+  .captura,
+  .home > section {
+    padding-inline: var(--space-4);
+  }
+
+  .captura h2,
+  .home > section h2 {
+    font-size: var(--type-lg);
+    margin-block-end: var(--space-2);
+  }
+
+  .captura form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-inline-size: 28rem;
+  }
+
+  .captura input[type="text"] {
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+  }
+
+  .consentimento {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-sm);
+  }
+
+  .armadilha {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    inset-inline-start: -9999px;
+  }
+
+  .captura button {
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-4);
+    color: var(--color-paper);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+</style>
