@@ -17,3 +17,4 @@ export {
   requiresScore,
   type MatchStatus,
 } from "./match-state";
+export { buildMatchSlug } from "./slug";

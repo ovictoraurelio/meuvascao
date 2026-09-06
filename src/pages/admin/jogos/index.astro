@@ -1,0 +1,43 @@
+---
+import { getRequestDb } from "@/lib/db/client";
+import { listAdmin } from "@/modules/administracao";
+import Admin from "../../../layouts/Admin.astro";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+let data;
+try {
+  data = await listAdmin(getRequestDb(), Astro.locals.session);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+---
+
+<Admin title="Agenda editorial">
+  <a href="/admin/jogos/novo">Novo jogo</a>
+  <ul>
+    {
+      data.games.map((game) => (
+        <li>
+          <article>
+            <>
+              <h2>
+                <a href={`/admin/jogos/${game.slug}`}>{game.opponentName}</a>
+              </h2>
+              <p>
+                {game.status} · {game.competition}
+              </p>
+              <a href={`/jogos/${game.slug}`}>Ver página pública</a>
+            </>
+          </article>
+        </li>
+      ))
+    }
+  </ul>
+  {data.games.length === 0 && <p>Nenhum jogo cadastrado.</p>}
+</Admin>

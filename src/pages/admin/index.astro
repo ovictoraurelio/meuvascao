@@ -1,0 +1,18 @@
+---
+import { getRequestDb } from "@/lib/db/client";
+import { requireRole } from "@/modules/administracao";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+try {
+  await requireRole(getRequestDb(), Astro.locals.session, ["editor", "admin"]);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+return Astro.redirect("/admin/jogos");
+---

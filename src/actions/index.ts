@@ -1,3 +1,4 @@
+import { admin } from "./admin";
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "zod";
 
@@ -35,6 +36,7 @@ const SESSION_INVALID_MESSAGE =
 // resultado volta via Astro.getActionResult) e `security.checkOrigin` (astro.config.ts) já
 // rejeita um POST cuja Origin não seja a do próprio site — é a proteção contra CSRF.
 export const server = {
+  admin,
   leads: {
     cadastrar: defineAction({
       accept: "form",

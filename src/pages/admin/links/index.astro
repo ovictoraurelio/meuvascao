@@ -1,0 +1,49 @@
+---
+import { actions } from "astro:actions";
+import { getRequestDb } from "@/lib/db/client";
+import { listAdmin } from "@/modules/administracao";
+import Admin from "../../../layouts/Admin.astro";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+let data;
+try {
+  data = await listAdmin(getRequestDb(), Astro.locals.session);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+const result = Astro.getActionResult(actions.admin.retirarLink);
+---
+
+<Admin title="Curadoria de links">
+  <a href="/admin/links/novo">Novo link</a>
+  {result?.error && <p role="alert">{result.error.message}</p>}
+  {result?.data && <p role="status">Link retirado.</p>}
+  <ul>
+    {
+      data.links.map((link) => (
+        <li>
+          <article>
+            <h2>{link.title}</h2>
+            <p>
+              {link.status} · {link.label}
+            </p>
+            <a href={`/admin/links/${link.id}`}>Editar</a>
+            {link.status === "publicado" && (
+              <form method="POST" action={actions.admin.retirarLink}>
+                <input type="hidden" name="id" value={link.id} />
+                <button type="submit">Retirar</button>
+              </form>
+            )}
+          </article>
+        </li>
+      ))
+    }
+  </ul>
+  {data.links.length === 0 && <p>Nenhum link cadastrado.</p>}
+</Admin>
