@@ -1,5 +1,6 @@
 ---
 import { getRequestDb } from "@/lib/db/client";
+import { formatKickoff } from "@/lib/match-kickoff";
 import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
 import { formatBRT } from "@/lib/time/brt";
 import { findMatchBySlug } from "@/modules/partidas";
@@ -28,7 +29,7 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
   <article class="jogo">
     <p class="competicao">{match.competition}</p>
     <h1>
-      Vasco {match.homeAway === "casa" ? "x" : "×"}
+      Vasco {match.homeAway === "casa" ? "x" : "×"}{" "}
       {match.opponentName}
     </h1>
     {
@@ -36,12 +37,8 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
         <p class="status">{MATCH_STATUS_LABEL[match.status]}</p>
       )
     }
-    <p class="horario">
-      {
-        match.kickoffPrecision === "confirmado" && match.kickoffAt
-          ? formatBRT(match.kickoffAt)
-          : "Horário a confirmar"
-      }
+    <p class="horario" data-testid="horario">
+      {formatKickoff(match)}
       {match.venue && ` · ${match.venue}`}
     </p>
     {
@@ -74,6 +71,8 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
     <p class="atualizacao">
       Última atualização: {formatBRT(match.updatedAt)}
     </p>
+
+    <a href="#comentar" class="cta-comentar"> Comentar </a>
 
     <section id="comentar" class="resenha">
       <h2>Resenha</h2>
@@ -117,6 +116,23 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
   .atualizacao {
     font-size: var(--type-sm);
     color: var(--color-ink-muted);
+  }
+
+  .cta-comentar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    min-block-size: var(--size-tap-target-min);
+    margin-block-start: var(--space-2);
+    padding-inline: var(--space-4);
+    color: var(--color-paper);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+
+  .cta-comentar:hover {
+    text-decoration: none;
   }
 
   .resenha {

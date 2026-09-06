@@ -1,11 +1,129 @@
 ---
-import EstadoVazio from "../../layouts/EstadoVazio.astro";
+import { getRequestDb } from "@/lib/db/client";
+import { formatKickoff } from "@/lib/match-kickoff";
+import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
+import { listMatches, type Match } from "@/modules/partidas";
+import Base from "../../layouts/Base.astro";
+
+const db = getRequestDb();
+const { upcoming, past } = await listMatches(db);
+
+function resultado(match: Match): string {
+  return match.status === "encerrado"
+    ? `${match.scoreVasco} x ${match.scoreOpponent}`
+    : MATCH_STATUS_LABEL[match.status];
+}
 ---
 
-<EstadoVazio
+<Base
   title="Jogos — Meu Vascão"
   description="Agenda e resultados do Vasco."
   active="jogos"
-  heading="Jogos"
-  message="Em construção. A agenda de jogos chega na próxima fatia."
-/>
+>
+  <div class="jogos">
+    <h1>Jogos</h1>
+    {
+      upcoming.length === 0 && past.length === 0 && (
+        <p class="aviso">Ainda não há jogos cadastrados.</p>
+      )
+    }
+
+    {
+      upcoming.length > 0 && (
+        <section aria-label="Próximos jogos">
+          <h2>Próximos jogos</h2>
+          <ul>
+            {upcoming.map((match) => (
+              <li>
+                <a href={`/jogos/${match.slug}`}>
+                  <p class="adversario">
+                    Vasco {match.homeAway === "casa" ? "x" : "×"}{" "}
+                    {match.opponentName}
+                  </p>
+                  <p class="meta">
+                    {match.competition} · {formatKickoff(match)}
+                    {MATCH_STATUS_LABEL[match.status] &&
+                      ` · ${MATCH_STATUS_LABEL[match.status]}`}
+                  </p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      past.length > 0 && (
+        <section aria-label="Resultados">
+          <h2>Resultados</h2>
+          <ul>
+            {past.map((match) => (
+              <li>
+                <a href={`/jogos/${match.slug}`}>
+                  <p class="adversario">
+                    Vasco {match.homeAway === "casa" ? "x" : "×"}{" "}
+                    {match.opponentName}
+                  </p>
+                  <p class="meta">
+                    {match.competition} · {resultado(match)}
+                  </p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .jogos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-4);
+  }
+
+  .aviso {
+    color: var(--color-ink-muted);
+  }
+
+  h2 {
+    font-size: var(--type-lg);
+    margin-block-end: var(--space-2);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  li a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-1);
+    min-block-size: var(--size-tap-target-min);
+    padding-block: var(--space-2);
+    border-block-end: 1px solid var(--color-paper-muted);
+  }
+
+  li a:hover {
+    text-decoration: none;
+  }
+
+  .adversario {
+    font-family: var(--font-display);
+    font-size: var(--type-md);
+    font-weight: var(--font-display-weight);
+    color: var(--color-ink);
+  }
+
+  .meta {
+    font-size: var(--type-sm);
+    color: var(--color-ink-muted);
+  }
+</style>

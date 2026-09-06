@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // Rotas públicas do esqueleto atual. Cada fatia que adiciona uma rota pública (jogos, resenha,
 // institucionais) soma-se a esta lista; /perfil e /admin exigem sessão e entram com as fatias que
 // as introduzem (F6 e F7), com um teste próprio autenticado.
-const PUBLIC_ROUTES = ["/"];
+const PUBLIC_ROUTES = ["/", "/jogos", "/jogos/vasco-x-adversario-seed"];
 
 for (const route of PUBLIC_ROUTES) {
   test(`${route} não tem violação de acessibilidade séria ou crítica`, async ({
