@@ -105,7 +105,7 @@ test.describe("F6: Conta e sessão", () => {
   }, testInfo) => {
     const email = `redirect-${testInfo.project.name}-${Date.now()}@example.com`;
     await page.goto("/jogos/vasco-x-adversario-seed#comentar");
-    await page.getByRole("link", { name: "Comentar" }).click();
+    await page.getByRole("link", { name: "Entrar para publicar" }).click();
     await expect(page).toHaveURL(/\/entrar\?redirect=/);
 
     await page.getByLabel("E-mail").fill(email);
