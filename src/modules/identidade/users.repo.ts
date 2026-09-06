@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import type { Database } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
+import { sessions, users } from "@/lib/db/schema";
 import { newId } from "@/lib/ids";
 
 import { normalizeNickname } from "./nickname";
@@ -133,18 +133,24 @@ export async function anonymizeAndDeleteUser(
 ): Promise<User> {
   const now = new Date();
   const anonymizedNickname = `torcedor-excluído-${userId.slice(0, 8)}`;
-  const [row] = await db
-    .update(users)
-    .set({
-      email: "",
-      emailNormalized: `deleted-${userId}`,
-      nickname: anonymizedNickname,
-      nicknameNormalized: normalizeNickname(anonymizedNickname),
-      status: "deleted",
-      deletedAt: now,
-      updatedAt: now,
-    })
-    .where(eq(users.id, userId))
-    .returning();
-  return assertReturningRow(row, "usuário");
+  const [rows] = await db.batch([
+    db
+      .update(users)
+      .set({
+        email: "",
+        emailNormalized: `deleted-${userId}`,
+        nickname: anonymizedNickname,
+        nicknameNormalized: normalizeNickname(anonymizedNickname),
+        status: "deleted",
+        deletedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId))
+      .returning(),
+    db
+      .update(sessions)
+      .set({ revokedAt: now })
+      .where(eq(sessions.userId, userId)),
+  ]);
+  return assertReturningRow(rows[0], "usuário");
 }

@@ -13,6 +13,8 @@ export class ResendSendError extends Error {}
 
 /** Produção só: envia via REST da Resend, autenticado por RESEND_API_KEY (`wrangler secret put`). */
 export function createResendSender(apiKey: string): EmailSender {
+  if (!apiKey.trim())
+    throw new ResendSendError("Envio de e-mail não configurado.");
   return {
     async sendMagicLink({ to, link }: MagicLinkEmail): Promise<void> {
       const res = await fetch(RESEND_API_URL, {
@@ -25,7 +27,7 @@ export function createResendSender(apiKey: string): EmailSender {
           from: FROM_ADDRESS,
           to,
           subject: MAGIC_LINK_EMAIL_SUBJECT,
-          html: `<p>Clique para entrar: <a href="${link}">${link}</a></p>`,
+          text: `Clique para entrar: ${link}`,
         }),
       });
       if (!res.ok) {

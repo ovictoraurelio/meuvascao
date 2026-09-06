@@ -24,7 +24,6 @@ import {
   requestMagicLinkSchema,
   requireNotSuspended,
   ReservedNicknameError,
-  revokeAllSessionsForUser,
   SuspendedAccountError,
   TurnstileFailedError as MagicLinkTurnstileFailedError,
 } from "@/modules/identidade";
@@ -225,7 +224,6 @@ export const server = {
         // Diferente de toda outra escrita: exclusão da própria conta é permitida mesmo suspensa
         // (direito da pessoa, não uma ação na comunidade que a suspensão deveria bloquear).
         await deleteOwnAccount(db, authenticated.user.id);
-        await revokeAllSessionsForUser(db, authenticated.user.id);
         clearSessionCookie(context.cookies);
         return { ok: true as const };
       },

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { Database } from "@/lib/db/client";
 import { sha256Hex } from "@/lib/crypto/hash";
-import { getEnv, isProduction } from "@/lib/env";
+import { getEnv, isDevelopment } from "@/lib/env";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 import { createDevMailboxSender } from "./email-dev-mailbox";
@@ -15,18 +15,10 @@ import {
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
 import { createSession } from "./sessions.repo";
-import {
-  countRecentTokensByEmail,
-  countRecentTokensByIpHash,
-  consumeAuthToken,
-  createAuthToken,
-} from "./tokens.repo";
+import { consumeAuthToken, reserveAuthToken } from "./tokens.repo";
 import { findOrCreateUserByEmail, type User } from "./users.repo";
 
 const TOKEN_TTL_MS = 15 * 60 * 1000;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_REQUESTS_PER_EMAIL = 3;
-const MAX_REQUESTS_PER_IP = 10;
 
 export class RateLimitedError extends Error {}
 export class TurnstileFailedError extends Error {}
@@ -50,9 +42,9 @@ function newAuthTokenPlaintext(): string {
   );
 }
 
-/** ResendSender em produção (REST), DevMailboxSender fora dela — nunca os dois ao mesmo tempo. */
+/** Resend em ambientes públicos; mailbox apenas no desenvolvimento local. */
 function getEmailSender(db: Database): EmailSender {
-  if (isProduction()) {
+  if (!isDevelopment()) {
     return createResendSender(getEnv().RESEND_API_KEY ?? "");
   }
   return createDevMailboxSender(db);
@@ -70,15 +62,12 @@ export interface RequestMagicLinkContext {
 
 /**
  * Pedido de link mágico: Turnstile, limite por e-mail (3/15min, sempre) e por IP (10/15min, só em
- * produção), token de 32 bytes (só o hash SHA-256 vai para o banco) com validade de 15 minutos,
+ * ambientes públicos), token de 32 bytes (só o hash SHA-256 vai para o banco) com validade de 15 minutos,
  * e-mail enviado pelo sender do ambiente atual. Nunca revela se o e-mail já tem conta — o próprio
  * fluxo de confirmação cria a conta na hora, se preciso.
  *
- * O limite por IP só é aplicado em produção: fora dela (astro dev, wrangler dev local, o
- * workers pool de teste) todo tráfego vem da mesma máquina/executor, então um IP simulado fixo
- * juntaria qualquer sequência de testes independentes (E2E, um humano testando manualmente) num
- * único balde — pior que não aplicar o limite ali. Em produção, a Cloudflare sempre entrega o IP
- * real de cada cliente.
+ * O limite por IP vale em preview e produção. Desenvolvimento usa IP simulado compartilhado,
+ * então só o limite por e-mail é aplicado ali. A reserva no repositório é atômica.
  */
 export async function requestMagicLink(
   { db, ip, siteUrl }: RequestMagicLinkContext,
@@ -90,23 +79,18 @@ export async function requestMagicLink(
 
   const emailNormalized = normalizeEmail(input.email);
   const ipHash = ip ? await sha256Hex(ip) : undefined;
-  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
-
-  const [byEmail, byIp] = await Promise.all([
-    countRecentTokensByEmail(db, emailNormalized, since),
-    ipHash && isProduction() ? countRecentTokensByIpHash(db, ipHash, since) : 0,
-  ]);
-  if (byEmail >= MAX_REQUESTS_PER_EMAIL || byIp >= MAX_REQUESTS_PER_IP) {
-    throw new RateLimitedError();
-  }
-
   const token = newAuthTokenPlaintext();
-  await createAuthToken(db, {
-    emailNormalized,
-    tokenHash: await sha256Hex(token),
-    expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
-    ipHash,
-  });
+  const reserved = await reserveAuthToken(
+    db,
+    {
+      emailNormalized,
+      tokenHash: await sha256Hex(token),
+      expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
+      ipHash,
+    },
+    !isDevelopment(),
+  );
+  if (!reserved) throw new RateLimitedError();
 
   const confirmUrl = new URL("/entrar/confirmar", siteUrl);
   confirmUrl.searchParams.set("token", token);

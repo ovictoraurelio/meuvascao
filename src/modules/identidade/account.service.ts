@@ -82,6 +82,7 @@ export async function deleteOwnAccount(
 }
 
 export interface AccountExport {
+  email: string;
   apelido: string | null;
   papel: User["role"];
   criadaEm: string;
@@ -90,6 +91,7 @@ export interface AccountExport {
 /** Só os campos que fazem sentido para o próprio dono ver — nunca hash de token nem HMAC de sessão. */
 export function buildAccountExport(user: User): AccountExport {
   return {
+    email: user.email,
     apelido: user.nickname,
     papel: user.role,
     criadaEm: user.createdAt.toISOString(),

@@ -80,3 +80,20 @@ export async function countRecentTokensByIpHash(
     );
   return row?.total ?? 0;
 }
+
+/** Reserva e verifica os limites no mesmo statement; não existe janela entre count e insert. */
+export async function reserveAuthToken(
+  db: Database,
+  input: CreateAuthTokenInput,
+  enforceIp: boolean,
+): Promise<boolean> {
+  const now = Date.now();
+  const since = now - 15 * 60 * 1000;
+  const result = await db.run(sql`
+    INSERT INTO auth_tokens (id, email_normalized, token_hash, expires_at, ip_hash, created_at)
+    SELECT ${newId()}, ${input.emailNormalized}, ${input.tokenHash}, ${input.expiresAt.getTime()}, ${input.ipHash ?? null}, ${now}
+    WHERE (SELECT count(*) FROM auth_tokens WHERE email_normalized = ${input.emailNormalized} AND created_at >= ${since}) < 3
+      AND (${enforceIp && !!input.ipHash ? 1 : 0} = 0 OR (SELECT count(*) FROM auth_tokens WHERE ip_hash = ${input.ipHash ?? null} AND created_at >= ${since}) < 10)
+  `);
+  return result.meta.changes === 1;
+}

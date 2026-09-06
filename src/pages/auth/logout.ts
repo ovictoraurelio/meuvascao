@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getRequestDb } from "@/lib/db/client";
 import {
   clearSessionCookie,
+  getAuthenticatedUser,
   revokeAllSessionsForUser,
   revokeSession,
 } from "@/modules/identidade";
@@ -26,7 +27,9 @@ export const POST: APIRoute = async (context) => {
       escopo: formData?.get("escopo") || undefined,
     });
     if (escopo === "todos") {
-      await revokeAllSessionsForUser(db, session.uid);
+      const authenticated = await getAuthenticatedUser(db, session);
+      if (authenticated)
+        await revokeAllSessionsForUser(db, authenticated.user.id);
     } else {
       await revokeSession(db, session.sid);
     }

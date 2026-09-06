@@ -181,9 +181,7 @@ test.describe("F6: Conta e sessão", () => {
     await entrarComApelidoNovo(page, email, `Revogado${Date.now()}`);
     const oldCookies = await context.cookies();
     await page.getByRole("button", { name: "Sair", exact: true }).click();
-    await page.goto("/entrar");
-    await page.getByLabel("E-mail").fill(email);
-    await page.getByRole("button", { name: "Enviar link de acesso" }).click();
+    await pedirLinkMagico(page, email);
     await abrirLinkDoDevMailbox(page, email);
     await expect(page).toHaveURL(/\/perfil/);
     const currentCookies = await context.cookies();
