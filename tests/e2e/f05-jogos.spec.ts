@@ -80,11 +80,12 @@ test.describe("F5: Jogos", () => {
       page.getByRole("heading", { level: 2, name: "Resultados" }),
     ).toBeVisible();
 
-    const proximo = page
-      .getByRole("link")
-      .filter({ hasText: "Adversário Seed" })
-      .first();
-    await proximo.click();
+    // Todos os jogos do seed têm o mesmo adversário (tests/e2e/f04-f10-*), então o link é
+    // localizado pelo href de destino, não pelo texto do adversário (ambíguo entre os 4 jogos).
+    await page
+      .locator('a[href="/jogos/vasco-x-adversario-seed"]')
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/jogos\/vasco-x-adversario-seed$/);
   });
 });

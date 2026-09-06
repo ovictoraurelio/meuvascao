@@ -1,5 +1,6 @@
 ---
 import { getRequestDb } from "@/lib/db/client";
+import { formatKickoff } from "@/lib/match-kickoff";
 import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
 import { formatBRT } from "@/lib/time/brt";
 import { findMatchBySlug } from "@/modules/partidas";
@@ -28,7 +29,7 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
   <article class="jogo">
     <p class="competicao">{match.competition}</p>
     <h1>
-      Vasco {match.homeAway === "casa" ? "x" : "×"}
+      Vasco {match.homeAway === "casa" ? "x" : "×"}{" "}
       {match.opponentName}
     </h1>
     {
@@ -37,11 +38,7 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
       )
     }
     <p class="horario" data-testid="horario">
-      {
-        match.kickoffPrecision === "confirmado" && match.kickoffAt
-          ? formatBRT(match.kickoffAt)
-          : "Horário a confirmar"
-      }
+      {formatKickoff(match)}
       {match.venue && ` · ${match.venue}`}
     </p>
     {

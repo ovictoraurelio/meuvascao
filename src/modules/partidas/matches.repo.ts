@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/lib/db/client";
 import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
@@ -119,35 +119,33 @@ export interface MatchAgenda {
   past: Match[];
 }
 
+function compareByKickoff(a: Match, b: Match, direction: 1 | -1): number {
+  // Sem horário marcado vai sempre por último, nos dois sentidos — nunca há data para comparar.
+  if (a.kickoffAt === null && b.kickoffAt === null) return 0;
+  if (a.kickoffAt === null) return 1;
+  if (b.kickoffAt === null) return -1;
+  return direction * (a.kickoffAt.getTime() - b.kickoffAt.getTime());
+}
+
 /**
- * Todos os jogos para a agenda (`/jogos`): os que ainda podem acontecer, do mais próximo ao mais
- * distante (sem horário por último, mesmo critério de findNextMatch); os que já encerraram ou
- * foram cancelados, do mais recente ao mais antigo. Duas consultas simples em vez de buscar tudo
- * e agrupar em memória — a v1 não tem paginação e o volume esperado (poucos jogos por semana) não
- * justifica a complexidade de uma única consulta com ordenação condicional por grupo.
+ * Todos os jogos para a agenda (`/jogos`), divididos em duas listas: os que ainda podem
+ * acontecer, do mais próximo ao mais distante (sem horário marcado por último, mesmo critério de
+ * findNextMatch); os que já encerraram ou foram cancelados, do mais recente ao mais antigo. Uma
+ * única consulta ao D1 (sem paginação, sem filtro de status na própria query) e a divisão/
+ * ordenação em memória — o volume esperado (poucos jogos por semana) não justifica duas consultas
+ * quase idênticas.
  */
 export async function listMatches(db: Database): Promise<MatchAgenda> {
-  const upcoming = await db
-    .select()
-    .from(matches)
-    .where(
-      and(
-        isNull(matches.deletedAt),
-        inArray(matches.status, UPCOMING_STATUSES),
-      ),
-    )
-    .orderBy(sql`${matches.kickoffAt} is null`, asc(matches.kickoffAt));
+  const rows = await db.select().from(matches).where(isNull(matches.deletedAt));
 
-  const past = await db
-    .select()
-    .from(matches)
-    .where(
-      and(
-        isNull(matches.deletedAt),
-        notInArray(matches.status, UPCOMING_STATUSES),
-      ),
-    )
-    .orderBy(sql`${matches.kickoffAt} is null`, sql`${matches.kickoffAt} desc`);
+  const upcoming: Match[] = [];
+  const past: Match[] = [];
+  for (const row of rows) {
+    (isUpcoming(row.status) ? upcoming : past).push(row);
+  }
+
+  upcoming.sort((a, b) => compareByKickoff(a, b, 1));
+  past.sort((a, b) => compareByKickoff(a, b, -1));
 
   return { upcoming, past };
 }

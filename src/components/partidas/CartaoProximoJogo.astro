@@ -1,9 +1,9 @@
 ---
+import { formatKickoff } from "@/lib/match-kickoff";
 import {
   MATCH_STATUS_LABEL,
   type MatchStatusValue,
 } from "@/lib/match-status-label";
-import { formatBRT } from "@/lib/time/brt";
 
 // Forma estrutural, não importada de @/modules/partidas: componentes de apresentação não
 // importam módulos de domínio (eslint no-restricted-imports), mesmo só para o tipo.
@@ -39,9 +39,7 @@ const { match } = Astro.props;
             ` · ${MATCH_STATUS_LABEL[match.status]}`}
         </p>
         <p class="horario">
-          {match.kickoffPrecision === "confirmado" && match.kickoffAt
-            ? formatBRT(match.kickoffAt)
-            : "Horário a confirmar"}
+          {formatKickoff(match)}
           {match.venue && ` · ${match.venue}`}
         </p>
         <a href={`/jogos/${match.slug}#comentar`} class="cta">

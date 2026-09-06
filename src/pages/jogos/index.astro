@@ -1,18 +1,12 @@
 ---
 import { getRequestDb } from "@/lib/db/client";
+import { formatKickoff } from "@/lib/match-kickoff";
 import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
-import { formatBRT } from "@/lib/time/brt";
 import { listMatches, type Match } from "@/modules/partidas";
 import Base from "../../layouts/Base.astro";
 
 const db = getRequestDb();
 const { upcoming, past } = await listMatches(db);
-
-function horario(match: Match): string {
-  return match.kickoffPrecision === "confirmado" && match.kickoffAt
-    ? formatBRT(match.kickoffAt)
-    : "Horário a confirmar";
-}
 
 function resultado(match: Match): string {
   return match.status === "encerrado"
@@ -27,6 +21,7 @@ function resultado(match: Match): string {
   active="jogos"
 >
   <div class="jogos">
+    <h1>Jogos</h1>
     {
       upcoming.length === 0 && past.length === 0 && (
         <p class="aviso">Ainda não há jogos cadastrados.</p>
@@ -46,7 +41,7 @@ function resultado(match: Match): string {
                     {match.opponentName}
                   </p>
                   <p class="meta">
-                    {match.competition} · {horario(match)}
+                    {match.competition} · {formatKickoff(match)}
                     {MATCH_STATUS_LABEL[match.status] &&
                       ` · ${MATCH_STATUS_LABEL[match.status]}`}
                   </p>
