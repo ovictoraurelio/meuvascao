@@ -4,7 +4,7 @@
 
 Portal independente, feito por torcedores, para acompanhar o Vasco e viver cada partida em comunidade. Sem vínculo oficial com o Club de Regatas Vasco da Gama.
 
-Estado: **v1 em construção**, com home, agenda, conta/sessão, administração editorial, páginas institucionais e ferramentas de operação implementadas. A participação pública fica fechada por padrão até a configuração dos serviços e da operação. O protótipo 0.1.0 está arquivado em `prototype/`.
+Estado: **publicado em modo leitura em [meuvascao.com](https://meuvascao.com), v1 em construção**, com home, agenda, conta/sessão, administração editorial, resenha por jogo, moderação, páginas institucionais e ferramentas de operação implementadas. A participação pública fica fechada por padrão até a configuração dos serviços e da operação. O protótipo 0.1.0 está arquivado em `prototype/`.
 
 ## Stack
 

@@ -10,7 +10,14 @@ test("produção mantém estilos sem violações de CSP", async ({ page }) => {
       document.documentElement.dataset.cspViolation = "true";
     });
   });
-  for (const route of ["/", "/jogos", "/sobre", "/entrar"]) {
+  for (const route of [
+    "/",
+    "/jogos",
+    "/sobre",
+    "/entrar",
+    "/resenha",
+    "/jogos/vasco-x-adversario-seed",
+  ]) {
     await page.goto(route);
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator("h1")).toHaveCount(1);
