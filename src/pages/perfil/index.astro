@@ -37,6 +37,12 @@ const { user } = authenticated;
       )
     }
 
+    {
+      user.role !== "torcedor" && user.status === "active" && (
+        <a href="/admin">Área da equipe</a>
+      )
+    }
+
     <form method="POST" action="/auth/logout">
       <button type="submit">Sair</button>
     </form>

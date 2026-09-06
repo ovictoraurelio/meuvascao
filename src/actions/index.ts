@@ -1,4 +1,5 @@
 import { admin } from "./admin";
+import { moderacao } from "./moderacao";
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "zod";
 
@@ -37,6 +38,7 @@ const SESSION_INVALID_MESSAGE =
 // rejeita um POST cuja Origin não seja a do próprio site — é a proteção contra CSRF.
 export const server = {
   admin,
+  moderacao,
   leads: {
     cadastrar: defineAction({
       accept: "form",

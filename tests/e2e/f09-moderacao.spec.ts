@@ -57,6 +57,9 @@ test("moderador acessa controles privados com formulários acessíveis", async (
   baseURL,
 }) => {
   await login(page, baseURL, "moderador");
+  await page.goto("/perfil");
+  await page.getByRole("link", { name: "Área da equipe" }).click();
+  await expect(page).toHaveURL(/\/admin\/moderacao$/);
   const response = await page.goto("/admin/moderacao");
   expect(response?.status()).toBe(200);
   expect(response?.headers()["cache-control"]).toContain("no-store");
