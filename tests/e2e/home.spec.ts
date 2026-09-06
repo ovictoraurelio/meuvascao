@@ -11,12 +11,17 @@ test("home carrega sem erros de JavaScript e só busca fora do site o que está 
   const external: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (req) => {
-    const url = new URL(req.url());
+    const rawUrl = req.url();
+    // blob:/data: não são requisições de rede reais (o próprio widget do Turnstile gera um blob:
+    // local); `new URL(blobUrl).hostname` também não daria o host esperado, então nem chegam a
+    // essa checagem.
+    if (rawUrl.startsWith("blob:") || rawUrl.startsWith("data:")) return;
+    const url = new URL(rawUrl);
     if (
       !["127.0.0.1", "localhost"].includes(url.hostname) &&
       !ALLOWED_EXTERNAL_HOSTS.includes(url.hostname)
     ) {
-      external.push(req.url());
+      external.push(rawUrl);
     }
   });
 
