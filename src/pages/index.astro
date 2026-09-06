@@ -1,6 +1,7 @@
 ---
 import { actions } from "astro:actions";
 
+import { publicSignupsEnabled } from "@/lib/env";
 import { getRequestDb } from "@/lib/db/client";
 import { listPublishedBySlot } from "@/modules/curadoria";
 import { findNextMatch } from "@/modules/partidas";
@@ -9,6 +10,7 @@ import ListaLinks from "../components/curadoria/ListaLinks.astro";
 import Turnstile from "../components/ui/Turnstile.astro";
 import Base from "../layouts/Base.astro";
 
+const signupsEnabled = publicSignupsEnabled();
 const db = getRequestDb();
 const [nextMatch, em1Minuto, ultimasNoticias] = await Promise.all([
   findNextMatch(db),
@@ -60,36 +62,44 @@ const semDadosNenhum =
 
     <section class="captura" aria-label="Cadastro de novidades">
       <h2>Quer saber na hora?</h2>
-      <form method="POST" action={actions.leads.cadastrar}>
-        <input type="hidden" name="sourcePage" value="/" />
+      <p>Consulte o <a href="/privacidade">aviso de privacidade</a>.</p>
+      {
+        signupsEnabled ? (
+          <form method="POST" action={actions.leads.cadastrar}>
+            <input type="hidden" name="sourcePage" value="/" />
 
-        <label for="lead-value">E-mail ou WhatsApp</label>
-        <input id="lead-value" name="value" type="text" required />
+            <label for="lead-value">E-mail ou WhatsApp</label>
+            <input id="lead-value" name="value" type="text" required />
 
-        <div class="armadilha" aria-hidden="true">
-          <label for="lead-honeypot">Não preencha este campo</label>
-          <input
-            id="lead-honeypot"
-            name="honeypot"
-            type="text"
-            tabindex="-1"
-            autocomplete="off"
-            data-allow-small-target="armadilha antibot: invisível de propósito, não é alvo de toque real"
-          />
-        </div>
+            <div class="armadilha" aria-hidden="true">
+              <label for="lead-honeypot">Não preencha este campo</label>
+              <input
+                id="lead-honeypot"
+                name="honeypot"
+                type="text"
+                tabindex="-1"
+                autocomplete="off"
+                data-allow-small-target="armadilha antibot: invisível de propósito, não é alvo de toque real"
+              />
+            </div>
 
-        <p>
-          Leia o <a href="/privacidade">aviso de privacidade</a> antes de se cadastrar.
-        </p>
-        <label class="consentimento">
-          <input type="checkbox" name="consent" />
-          Aceito receber novidades do Meu Vascão por e-mail ou WhatsApp
-        </label>
+            <label class="consentimento">
+              <input type="checkbox" name="consent" />
+              Aceito receber novidades do Meu Vascão por e-mail ou WhatsApp
+            </label>
 
-        <Turnstile />
+            <Turnstile />
 
-        <button type="submit">Quero receber novidades</button>
-      </form>
+            <button type="submit">Quero receber novidades</button>
+          </form>
+        ) : (
+          <p>
+            Cadastro de novidades temporariamente indisponível. Continue
+            acompanhando os jogos e as notícias por aqui.
+          </p>
+        )
+      }
+
       {result?.error && <p role="alert">{result.error.message}</p>}
       {
         result?.data?.ok && (

@@ -2,7 +2,7 @@ import { ActionError, defineAction } from "astro:actions";
 import { z } from "zod";
 
 import { getRequestDb } from "@/lib/db/client";
-import { getEnv, isDevelopment } from "@/lib/env";
+import { getEnv, isDevelopment, publicSignupsEnabled } from "@/lib/env";
 import { safeRedirectTarget } from "@/lib/http/redirect-safe";
 import {
   DuplicateLeadError,
@@ -39,6 +39,14 @@ export const server = {
     cadastrar: defineAction({
       accept: "form",
       handler: async (formData, context) => {
+        if (!publicSignupsEnabled()) {
+          throw new ActionError({
+            code: "SERVICE_UNAVAILABLE",
+            message:
+              "Cadastro temporariamente indisponível. Você pode continuar acompanhando o site.",
+          });
+        }
+
         // O widget do Turnstile grava o token num campo próprio (`cf-turnstile-response`), não
         // num nome que o schema Zod escolheria — por isso o parsing manual em vez de deixar o
         // Astro casar FormData com o schema pelo nome de cada chave.
@@ -101,6 +109,14 @@ export const server = {
     pedirLinkMagico: defineAction({
       accept: "form",
       handler: async (formData, context) => {
+        if (!publicSignupsEnabled()) {
+          throw new ActionError({
+            code: "SERVICE_UNAVAILABLE",
+            message:
+              "Cadastro temporariamente indisponível. Você pode continuar acompanhando o site.",
+          });
+        }
+
         const raw = {
           email: formData.get("email"),
           redirect: formData.get("redirect") || undefined,
