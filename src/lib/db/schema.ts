@@ -113,6 +113,85 @@ export const settings = sqliteTable("settings", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+export const users = sqliteTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    // Privado (nunca exposto em leitura pública); usado só para o link mágico e o export próprio.
+    email: text("email").notNull(),
+    emailNormalized: text("email_normalized").notNull().unique(),
+    // Nulo até a escolha de apelido no primeiro login (migração 0002_identidade).
+    nickname: text("nickname"),
+    nicknameNormalized: text("nickname_normalized").unique(),
+    role: text("role", {
+      enum: ["torcedor", "editor", "moderador", "admin"],
+    })
+      .notNull()
+      .default("torcedor"),
+    status: text("status", { enum: ["active", "suspended", "deleted"] })
+      .notNull()
+      .default("active"),
+    suspendedUntil: integer("suspended_until", { mode: "timestamp_ms" }),
+    suspendedReason: text("suspended_reason"),
+    privacyVersionAccepted: text("privacy_version_accepted"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [index("users_status_idx").on(table.status)],
+);
+
+export const authTokens = sqliteTable(
+  "auth_tokens",
+  {
+    id: text("id").primaryKey(),
+    emailNormalized: text("email_normalized").notNull(),
+    // Só o hash SHA-256 do token de 32 bytes fica armazenado — o token em si só existe no link
+    // enviado por e-mail, nunca no banco (mesmo princípio de uma senha).
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp_ms" }),
+    ipHash: text("ip_hash"),
+    uaHash: text("ua_hash"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    index("auth_tokens_email_created_at_idx").on(
+      table.emailNormalized,
+      table.createdAt,
+    ),
+    index("auth_tokens_ip_created_at_idx").on(table.ipHash, table.createdAt),
+    index("auth_tokens_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    // 32 bytes aleatórios em hex (não UUID): é o próprio identificador dentro do cookie assinado.
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    index("sessions_user_revoked_idx").on(table.userId, table.revokedAt),
+  ],
+);
+
+// Só existe fora de produção (verificado em runtime, nunca por esquema): destino do
+// DevMailboxSender quando não há RESEND_API_KEY configurado.
+export const devMailbox = sqliteTable("dev_mailbox", {
+  id: text("id").primaryKey(),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  link: text("link").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export const auditLog = sqliteTable(
   "audit_log",
   {
