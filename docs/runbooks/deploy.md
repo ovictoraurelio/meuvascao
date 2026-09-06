@@ -62,6 +62,15 @@ openssl rand -base64 48 | npx wrangler secret put SESSION_SECRET --env preview
 
 `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY` e `SENTRY_DSN` seguem o mesmo padrão quando as fatias que os usam chegarem.
 
+### 7. DNS do apex antes do primeiro deploy de produção
+
+A zona foi importada com os registros de estacionamento da Squarespace: quatro `A` em `meuvascao.com` (198.185.159.144/145, 198.49.23.144/145) e `CNAME www → ext-sq.squarespace.com`. A rota `custom_domain` do Worker exige que **não exista** registro `A`/`AAAA`/`CNAME` no hostname; em modo não interativo o wrangler não sobrescreve, então o deploy de produção falha até removê-los. Antes do primeiro deploy:
+
+- Remover os quatro `A` do apex e o `CNAME www` (painel: Websites → meuvascao.com → DNS → Records; ou API `DELETE /zones/<id>/dns_records/<record_id>`).
+- Manter os TXT de e-mail (`v=spf1 -all`, DKIM vazio e DMARC `p=reject`): o domínio não envia e-mail e esses registros impedem que alguém envie em seu nome. Revisar quando o envio do link mágico (F6) ganhar um subdomínio ou provedor próprio.
+- O `CNAME _domainconnect` pode ser removido; é só integração da Squarespace.
+- Para `www.meuvascao.com` responder também, acrescentar `{ "pattern": "www.meuvascao.com", "custom_domain": true }` em `routes` de `env.production` (e um redirecionamento para o apex no middleware) numa fatia posterior.
+
 ## Fluxo do dia a dia
 
 1. **PR aberto ou atualizado**: o job "Preview do PR" faz `npm run build:preview`, valida o config gerado, aplica migrações no D1 de preview e publica uma versão com alias `pr-<n>`. A URL aparece num comentário do PR (sempre o mesmo comentário, atualizado) e no Environment `preview`. A URL principal do preview não muda.
