@@ -19,6 +19,13 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
   fora: "fora de casa",
   neutro: "em campo neutro",
 };
+
+// Só a checagem stateless do cookie (sem D1): uma sessão revogada só é pega de verdade quando
+// a resenha (F8) tentar publicar um comentário de fato. Aqui o pior caso é o link levar à seção
+// em vez de a /entrar — inofensivo enquanto não existe formulário de comentário.
+const comentarHref = Astro.locals.session
+  ? "#comentar"
+  : `/entrar?redirect=${encodeURIComponent(`${Astro.url.pathname}#comentar`)}`;
 ---
 
 <Base
@@ -72,7 +79,7 @@ const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
       Última atualização: {formatBRT(match.updatedAt)}
     </p>
 
-    <a href="#comentar" class="cta-comentar"> Comentar </a>
+    <a href={comentarHref} class="cta-comentar"> Comentar </a>
 
     <section id="comentar" class="resenha">
       <h2>Resenha</h2>

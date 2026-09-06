@@ -1,0 +1,13 @@
+---
+import { getTurnstileSiteKey } from "@/lib/turnstile";
+
+// Widget + script num só lugar: usado hoje no cadastro de novidades (home, F4) e no pedido de
+// link mágico (F6); a resenha (F8) usa de novo no primeiro comentário da sessão (docs/03).
+---
+
+<div class="cf-turnstile" data-sitekey={getTurnstileSiteKey()}></div>
+<script
+  is:inline
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+  async
+  defer></script>

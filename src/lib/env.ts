@@ -14,3 +14,13 @@ export function getEnv(): Env {
 export function isProduction(current: Env = getEnv()): boolean {
   return current.ENVIRONMENT === "production";
 }
+
+/**
+ * Só verdadeiro em desenvolvimento local/CI — nunca em preview. Rotas que precisam ser
+ * inacessíveis mesmo num preview publicamente alcançável (dev-login, /dev/mailbox: ambos criam ou
+ * expõem sessão de usuário sem senha) checam isto, não `!isProduction()` — preview tem
+ * `workers_dev: true` no wrangler.jsonc e é tão público quanto produção para esse efeito.
+ */
+export function isDevelopment(current: Env = getEnv()): boolean {
+  return current.ENVIRONMENT === "development";
+}

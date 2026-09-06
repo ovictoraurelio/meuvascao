@@ -1,6 +1,10 @@
 import { defineMiddleware } from "astro:middleware";
 
 import { isProduction } from "@/lib/env";
+import {
+  SESSION_COOKIE_NAME,
+  verifySessionCookieValue,
+} from "@/modules/identidade";
 
 /**
  * Cabeçalhos de segurança e regras por ambiente aplicados a toda resposta gerada pelo Worker.
@@ -12,6 +16,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Em produção a Cloudflare já identifica a requisição pelo cf-ray; localmente geramos um.
   context.locals.requestId =
     context.request.headers.get("cf-ray") ?? crypto.randomUUID();
+
+  // Só verifica a assinatura e a expiração (sem nenhuma leitura de D1) — uma escrita ou /perfil
+  // que precise confirmar que a sessão não foi revogada consulta o banco por conta própria
+  // (getAuthenticatedUser em @/modules/identidade). Sem cookie, isto nunca toca o banco.
+  context.locals.session = await verifySessionCookieValue(
+    context.cookies.get(SESSION_COOKIE_NAME)?.value,
+  );
 
   const upstream = await next();
   // Respostas podem vir com cabeçalhos imutáveis; recriar garante que podemos anotar.

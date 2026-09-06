@@ -19,20 +19,14 @@ function turnstileEnv(): TurnstileEnv {
   return getEnv() as unknown as TurnstileEnv;
 }
 
-// Se `wrangler secret put` nunca rodou em produção (runbook do fundador, não deste agente), a
-// proteção antibot degrada em silêncio para "sempre aprova" — sem isto, nada acusaria o problema.
-function warnIfFallbackInProduction(secretName: string): void {
-  if (isProduction()) {
-    console.error(
-      `Turnstile: ${secretName} não configurado em produção — usando chave de teste (sempre aprova).`,
-    );
-  }
+function isTestKey(value: string): boolean {
+  return /^[123]x0{10,}/.test(value);
 }
 
 /** Chave pública para o widget no HTML. Vazia em .dev.vars → chave de teste (sempre aprova). */
 export function getTurnstileSiteKey(): string {
   const configured = turnstileEnv().TURNSTILE_SITE_KEY;
-  if (!configured) warnIfFallbackInProduction("TURNSTILE_SITE_KEY");
+  if (isProduction() && (!configured || isTestKey(configured))) return "";
   return configured || TEST_SITE_KEY;
 }
 
@@ -47,7 +41,8 @@ export async function verifyTurnstileToken(
 ): Promise<boolean> {
   if (!token) return false;
   const configuredSecret = turnstileEnv().TURNSTILE_SECRET_KEY;
-  if (!configuredSecret) warnIfFallbackInProduction("TURNSTILE_SECRET_KEY");
+  if (isProduction() && (!configuredSecret || isTestKey(configuredSecret)))
+    return false;
   const secret = configuredSecret || TEST_SECRET_KEY;
   const body = new URLSearchParams({ secret, response: token });
   if (remoteIp) body.set("remoteip", remoteIp);
