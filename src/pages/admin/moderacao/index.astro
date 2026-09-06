@@ -1,0 +1,235 @@
+---
+import { actions } from "astro:actions";
+import { getRequestDb } from "@/lib/db/client";
+import { listModeration } from "@/modules/moderacao";
+import Admin from "../../../layouts/Admin.astro";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+let data;
+try {
+  data = await listModeration(getRequestDb(), Astro.locals.session);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+const results = [
+  Astro.getActionResult(actions.moderacao.ocultarComentario),
+  Astro.getActionResult(actions.moderacao.resolverDenuncia),
+  Astro.getActionResult(actions.moderacao.definirSuspensao),
+  Astro.getActionResult(actions.moderacao.definirModoLento),
+  Astro.getActionResult(actions.moderacao.definirThreadFechada),
+  Astro.getActionResult(actions.moderacao.definirEscritaFechada),
+];
+const error = results.find((result) => result?.error)?.error;
+const success = results.some((result) => result?.data?.ok);
+---
+
+<Admin title="Moderação da resenha">
+  <p>
+    Decisões humanas, com motivo e registro de auditoria. Cada lista mostra até
+    100 itens.
+  </p>
+  {error && <p role="alert">{error.message}</p>}
+  {success && <p role="status">Decisão registrada.</p>}
+  <section aria-label="Controle geral de escrita">
+    <h2>Publicações da comunidade</h2>
+    <p>
+      {
+        data.writingClosed
+          ? "Publicações pausadas pela moderação."
+          : "Publicações liberadas pela moderação."
+      }
+    </p>
+    <p>A disponibilidade pública também depende da abertura da comunidade.</p>
+    <form method="POST" action={actions.moderacao.definirEscritaFechada}>
+      <input type="hidden" name="closed" value={String(!data.writingClosed)} />
+      <label
+        >Motivo da alteração geral<textarea
+          name="reason"
+          required
+          minlength="3"
+          maxlength="1000"></textarea></label
+      >
+      <button type="submit"
+        >{
+          data.writingClosed ? "Liberar publicações" : "Pausar publicações"
+        }</button
+      >
+    </form>
+  </section>
+  <section aria-label="Fila de denúncias">
+    <h2>Denúncias abertas</h2>
+    {data.queue.length === 0 && <p>Nenhuma denúncia pendente.</p>}
+    <ul>
+      {
+        data.queue.map((report) => (
+          <li>
+            <article data-report-id={report.id}>
+              <h3>Comentário de {report.nickname ?? "Conta sem apelido"}</h3>
+              <p>
+                <time datetime={report.createdAt.toISOString()}>
+                  {report.createdAt.toLocaleString("pt-BR", {
+                    timeZone: "America/Sao_Paulo",
+                  })}
+                </time>{" "}
+                (Brasília)
+              </p>
+              <p>Denúncia: {report.reason}</p>
+              <blockquote>{report.body}</blockquote>
+              <form method="POST" action={actions.moderacao.ocultarComentario}>
+                <input type="hidden" name="id" value={report.commentId} />
+                <label>
+                  Motivo para ocultar
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">Ocultar comentário</button>
+              </form>
+              <form method="POST" action={actions.moderacao.resolverDenuncia}>
+                <input type="hidden" name="id" value={report.id} />
+                <label>
+                  Motivo para encerrar denúncia
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">Encerrar sem ocultar</button>
+              </form>
+              <form method="POST" action={actions.moderacao.definirSuspensao}>
+                <input type="hidden" name="id" value={report.authorId} />
+                <input type="hidden" name="suspended" value="true" />
+                <label>
+                  Motivo para suspender a conta
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">Suspender conta</button>
+              </form>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  <section aria-label="Contas suspensas">
+    <h2>Contas suspensas</h2>
+    {data.suspendedUsers.length === 0 && <p>Nenhuma conta suspensa.</p>}
+    <ul>
+      {
+        data.suspendedUsers.map((user) => (
+          <li>
+            <article>
+              <h3>{user.nickname ?? "Conta sem apelido"}</h3>
+              <p>{user.suspendedReason}</p>
+              <form method="POST" action={actions.moderacao.definirSuspensao}>
+                <input type="hidden" name="id" value={user.id} />
+                <input type="hidden" name="suspended" value="false" />
+                <label>
+                  Motivo para reativar
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">Reativar conta</button>
+              </form>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  <section aria-label="Controles por resenha">
+    <h2>Resenhas</h2>
+    {data.conversations.length === 0 && <p>Nenhuma resenha iniciada.</p>}
+    <ul>
+      {
+        data.conversations.map((thread) => (
+          <li>
+            <article>
+              <h3>
+                <a href={`/jogos/${thread.slug}#resenha`}>
+                  Vasco x {thread.opponentName}
+                </a>
+              </h3>
+              <p>
+                {thread.status === "closed"
+                  ? "Resenha fechada"
+                  : "Resenha aberta"}{" "}
+                · Intervalo entre comentários: {thread.slowModeSeconds} segundos
+              </p>
+              <form method="POST" action={actions.moderacao.definirModoLento}>
+                <input type="hidden" name="id" value={thread.id} />
+                <label>
+                  Intervalo em segundos
+                  <input
+                    type="number"
+                    name="seconds"
+                    min="0"
+                    max="3600"
+                    step="1"
+                    value={thread.slowModeSeconds}
+                    required
+                  />
+                </label>
+                <label>
+                  Motivo do modo lento
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">Salvar intervalo</button>
+              </form>
+              <form
+                method="POST"
+                action={actions.moderacao.definirThreadFechada}
+              >
+                <input type="hidden" name="id" value={thread.id} />
+                <input
+                  type="hidden"
+                  name="closed"
+                  value={String(thread.status !== "closed")}
+                />
+                <label>
+                  Motivo do estado da resenha
+                  <textarea
+                    name="reason"
+                    required
+                    minlength="3"
+                    maxlength="1000"
+                  />
+                </label>
+                <button type="submit">
+                  {thread.status === "closed"
+                    ? "Reabrir resenha"
+                    : "Fechar resenha"}
+                </button>
+              </form>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Admin>

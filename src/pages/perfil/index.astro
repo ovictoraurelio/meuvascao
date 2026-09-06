@@ -21,6 +21,21 @@ const { user } = authenticated;
   <div class="perfil">
     <h1>Perfil</h1>
     <p class="apelido">{user.nickname}</p>
+    {
+      user.status === "suspended" && (
+        <section aria-label="Suspensão da conta">
+          <h2>Sua conta está suspensa</h2>
+          <p>
+            {user.suspendedReason ??
+              "A moderação suspendeu as suas publicações."}
+          </p>
+          <p>
+            Você pode continuar lendo. Consulte as{" "}
+            <a href="/regras-da-resenha">regras da resenha</a>.
+          </p>
+        </section>
+      )
+    }
 
     <form method="POST" action="/auth/logout">
       <button type="submit">Sair</button>
