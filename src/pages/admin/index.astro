@@ -3,13 +3,15 @@ import { getRequestDb } from "@/lib/db/client";
 import { requireRole } from "@/modules/administracao";
 Astro.response.headers.set("Cache-Control", "private, no-store");
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
-let actor;
 try {
-  actor = await requireRole(getRequestDb(), Astro.locals.session, [
+  const actor = await requireRole(getRequestDb(), Astro.locals.session, [
     "editor",
     "moderador",
     "admin",
   ]);
+  return Astro.redirect(
+    actor.role === "moderador" ? "/admin/moderacao" : "/admin/jogos",
+  );
 } catch {
   return new Response("Acesso restrito à equipe autorizada.", {
     status: 403,
@@ -19,7 +21,4 @@ try {
     },
   });
 }
-return Astro.redirect(
-  actor.role === "moderador" ? "/admin/moderacao" : "/admin/jogos",
-);
 ---
