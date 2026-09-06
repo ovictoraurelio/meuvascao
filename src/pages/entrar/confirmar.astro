@@ -1,0 +1,128 @@
+---
+import { actions } from "astro:actions";
+
+import { getRequestDb } from "@/lib/db/client";
+import { safeRedirectTarget } from "@/lib/http/redirect-safe";
+import {
+  confirmMagicLink,
+  getAuthenticatedUser,
+  InvalidOrExpiredTokenError,
+  setSessionCookie,
+} from "@/modules/identidade";
+import Base from "../../layouts/Base.astro";
+
+const db = getRequestDb();
+const token = Astro.url.searchParams.get("token");
+const redirectTarget = safeRedirectTarget(
+  Astro.url.searchParams.get("redirect"),
+);
+
+let tokenError: string | null = null;
+
+if (token) {
+  try {
+    const { sessionCookieValue } = await confirmMagicLink(db, token);
+    setSessionCookie(Astro.cookies, sessionCookieValue);
+    // Redireciona para a mesma página sem o token na URL: uma nova visita a este link (ou um
+    // recarregamento vindo da escolha de apelido) não deve tentar consumir o token de novo — só
+    // usar a sessão que acabou de ser criada. Sem isso, o próprio fluxo de "escolher apelido"
+    // (que volta a esta URL) reencontraria `?token=` já usado e mostraria erro em vez do perfil.
+    return Astro.redirect(
+      redirectTarget
+        ? `/entrar/confirmar?redirect=${encodeURIComponent(redirectTarget)}`
+        : "/entrar/confirmar",
+    );
+  } catch (error) {
+    if (error instanceof InvalidOrExpiredTokenError) {
+      tokenError = "O link já foi usado ou expirou.";
+    } else {
+      throw error;
+    }
+  }
+}
+
+const escolherApelidoResult = Astro.getActionResult(
+  actions.identidade.escolherApelido,
+);
+if (escolherApelidoResult?.data?.ok) {
+  // O redirect vem do resultado da action, não de redirectTarget (a query string desta página):
+  // o bounce-back de uma action com accept:"form" não preserva a query string de onde o
+  // formulário foi enviado.
+  return Astro.redirect(escolherApelidoResult.data.redirect ?? "/perfil");
+}
+
+let nicknamePending = false;
+if (!tokenError && !token) {
+  // getAuthenticatedUser, não uma leitura direta de usuário: confirma no banco que a sessão
+  // continua ativa (não foi revogada por "sair de todos os dispositivos" enquanto o apelido
+  // ainda estava pendente), a mesma garantia que /perfil e as demais páginas autenticadas exigem.
+  const authenticated = await getAuthenticatedUser(db, Astro.locals.session);
+  if (!authenticated) {
+    return Astro.redirect("/entrar");
+  }
+  if (authenticated.user.nickname) {
+    return Astro.redirect(redirectTarget ?? "/perfil");
+  }
+  nicknamePending = true;
+}
+---
+
+<Base
+  title="Confirmar entrada — Meu Vascão"
+  description="Confirmação do link de acesso."
+>
+  <div class="confirmar">
+    {tokenError && <p role="alert">{tokenError}</p>}
+
+    {
+      nicknamePending && (
+        <>
+          <h1>Escolha um apelido</h1>
+          <p>É assim que você aparece na resenha — pode trocar depois.</p>
+          <form method="POST" action={actions.identidade.escolherApelido}>
+            {redirectTarget && (
+              <input type="hidden" name="redirect" value={redirectTarget} />
+            )}
+            <label for="apelido">Apelido</label>
+            <input id="apelido" name="nickname" type="text" required />
+            <button type="submit">Confirmar</button>
+          </form>
+          {escolherApelidoResult?.error && (
+            <p role="alert">{escolherApelidoResult.error.message}</p>
+          )}
+        </>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .confirmar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-inline-size: 28rem;
+  }
+
+  input[type="text"] {
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+  }
+
+  button {
+    min-block-size: var(--size-tap-target-min);
+    padding-inline: var(--space-4);
+    color: var(--color-paper);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-sm);
+  }
+</style>

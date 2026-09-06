@@ -15,3 +15,4 @@ export {
   listPublishedBySlot,
   type CuratedLink,
 } from "./links.repo";
+export { normalizeUrl } from "./url-normalize";

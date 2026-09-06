@@ -36,7 +36,7 @@
         "ENVIRONMENT": "preview",
         // Ajustar para a URL real do preview (workers.dev da conta ou um subdomínio próprio)
         // quando ela existir; só passa a ser usada em canonical/OG a partir da fatia F8.
-        "SITE_URL": "https://preview.meuvascao.com",
+        "SITE_URL": "https://meuvascao-preview.ovictoraurelio.workers.dev",
       },
       "d1_databases": [
         {

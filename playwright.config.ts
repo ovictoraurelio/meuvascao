@@ -1,6 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 8788;
+// Portas independentes permitem validar worktrees sem compartilhar servidor ou banco.
+const PORT = Number(process.env.E2E_PORT ?? 8788);
+if (!Number.isInteger(PORT) || PORT < 1024 || PORT > 65535) {
+  throw new Error("E2E_PORT deve ser uma porta entre 1024 e 65535.");
+}
 const baseURL = `http://127.0.0.1:${PORT}`;
 // Ambiente simulado pelo wrangler (`--var`) para exercitar os gates por ambiente. O deploy real
 // resolve o ambiente no build (CLOUDFLARE_ENV); aqui só trocamos a variável em cima do build atual.
@@ -45,7 +49,7 @@ export default defineConfig({
   webServer: {
     // Sempre sobe um servidor próprio sobre o build atual e o banco recriado. Não reaproveita um
     // `npm run preview` aberto na mesma porta, que poderia servir um build antigo com banco sujo.
-    command: `sh scripts/db-reset-local.sh && npm run serve:built -- --var ENVIRONMENT:${environment}`,
+    command: `sh scripts/db-reset-local.sh && npx wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state --port ${PORT} --var ENVIRONMENT:${environment}`,
     // Prontidão pela home: se o banco falhar, o 503 de /api/health aparece como falha de teste
     // explícita em health.api.spec.ts, não como timeout do servidor.
     url: `${baseURL}/`,

@@ -1,0 +1,135 @@
+---
+import { actions } from "astro:actions";
+import { getRequestDb } from "@/lib/db/client";
+import { listAdmin } from "@/modules/administracao";
+import Admin from "../../../layouts/Admin.astro";
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+let data;
+try {
+  data = await listAdmin(getRequestDb(), Astro.locals.session);
+} catch {
+  return new Response("Acesso restrito à equipe autorizada.", {
+    status: 403,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+const result = Astro.getActionResult(actions.admin.salvarJogo);
+if (result?.data) return Astro.redirect(`/admin/jogos/${result.data.slug}`);
+const game = data.games.find((game) => game.slug === Astro.params.slug);
+if (!game && Astro.params.slug !== "novo") return Astro.rewrite("/404");
+const kickoff = game?.kickoffAt
+  ? new Date(game.kickoffAt.getTime() - 3 * 3600000).toISOString().slice(0, 16)
+  : "";
+---
+
+<Admin title={game ? `Editar jogo: ${game.opponentName}` : "Novo jogo"}>
+  {result?.error && <p role="alert">{result.error.message}</p>}
+  {
+    game && (
+      <p>
+        Estado atual: <strong>{game.status}</strong>.{" "}
+        <a href={`/jogos/${game.slug}`}>Página pública</a>
+      </p>
+    )
+  }
+  <p>
+    Horários em Brasília. Preencha a fonte consultada; toda alteração fica
+    registrada.
+  </p>
+  <form method="POST" action={actions.admin.salvarJogo}>
+    <input type="hidden" name="id" value={game?.id ?? ""} />
+    <label
+      >Adversário<input
+        name="opponentName"
+        required
+        maxlength="200"
+        value={game?.opponentName ?? ""}
+      /></label
+    >
+    <label
+      >Competição<input
+        name="competition"
+        required
+        maxlength="200"
+        value={game?.competition ?? ""}
+      /></label
+    >
+    <label
+      >Mando<select name="homeAway"
+        ><option value="casa" selected={!game || game.homeAway === "casa"}
+          >Casa</option
+        ><option value="fora" selected={game?.homeAway === "fora"}>Fora</option
+        ><option value="neutro" selected={game?.homeAway === "neutro"}
+          >Neutro</option
+        ></select
+      ></label
+    >
+    <label
+      >Horário de Brasília<input
+        type="datetime-local"
+        name="kickoffAt"
+        value={kickoff}
+      /></label
+    >
+    <label
+      >Estado<select name="status"
+        >{
+          ["indefinido", "agendado", "adiado", "encerrado", "cancelado"].map(
+            (status) => (
+              <option
+                value={status}
+                selected={status === (game?.status ?? "indefinido")}
+              >
+                {status}
+              </option>
+            ),
+          )
+        }</select
+      ></label
+    >
+    <label
+      >Placar Vasco<input
+        type="number"
+        name="scoreVasco"
+        min="0"
+        max="99"
+        value={game?.scoreVasco ?? ""}
+      /></label
+    >
+    <label
+      >Placar adversário<input
+        type="number"
+        name="scoreOpponent"
+        min="0"
+        max="99"
+        value={game?.scoreOpponent ?? ""}
+      /></label
+    >
+    <label>Local<input name="venue" value={game?.venue ?? ""} /></label>
+    <label>Rodada<input name="round" value={game?.round ?? ""} /></label>
+    <label
+      >Fonte<input
+        name="sourceName"
+        required
+        value={game?.sourceName ?? ""}
+      /></label
+    >
+    <label
+      >URL da fonte<input
+        name="sourceUrl"
+        type="url"
+        required
+        value={game?.sourceUrl ?? ""}
+      /></label
+    >
+    <label
+      >Observações / motivo<textarea name="notes">{game?.notes ?? ""}</textarea
+      ></label
+    >
+    <button type="submit">Salvar</button>
+  </form>
+</Admin>
