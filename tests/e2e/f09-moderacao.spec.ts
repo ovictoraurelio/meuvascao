@@ -15,6 +15,18 @@ async function login(page: Page, baseURL: string | undefined, role: string) {
   expect(response.ok()).toBeTruthy();
 }
 
+async function sessionHeaders(page: Page, baseURL: string | undefined) {
+  // APIRequestContext não envia automaticamente cookies Secure no HTTP local;
+  // preservamos a configuração de produção e enviamos o cookie explicitamente no ensaio.
+  const cookies = await page.context().cookies();
+  return {
+    Origin: baseURL ?? "",
+    Cookie: cookies
+      .map((cookie) => `${cookie.name}=${cookie.value}`)
+      .join("; "),
+  };
+}
+
 test("torcedor recebe 403 e noindex na fila e em todas as decisões", async ({
   page,
   baseURL,
@@ -33,7 +45,7 @@ test("torcedor recebe 403 e noindex na fila e em todas as decisões", async ({
     "definirEscritaFechada",
   ]) {
     const action = await page.request.post(`/_actions/moderacao.${name}`, {
-      headers: { Origin: baseURL ?? "" },
+      headers: await sessionHeaders(page, baseURL),
       form: {},
     });
     expect(action.status()).toBe(403);
@@ -74,7 +86,7 @@ test("denúncia analisada por humano oculta texto e preserva marcador público",
     .first()
     .inputValue();
   const posted = await page.request.post("/_actions/comunidade.comentar", {
-    headers: { Origin: baseURL ?? "" },
+    headers: await sessionHeaders(page, baseURL),
     form: {
       matchId,
       body,
@@ -92,7 +104,7 @@ test("denúncia analisada por humano oculta texto e preserva marcador público",
   const commentId = anchor.slice("comentario-".length);
   await login(page, baseURL, "torcedor");
   const reported = await page.request.post("/_actions/comunidade.denunciar", {
-    headers: { Origin: baseURL ?? "" },
+    headers: await sessionHeaders(page, baseURL),
     form: { commentId, reason: "spam" },
   });
   expect(reported.ok()).toBeTruthy();
@@ -113,4 +125,51 @@ test("denúncia analisada por humano oculta texto e preserva marcador público",
   await expect(page.locator(`[id="${anchor}"]`)).toContainText(
     /ocultado.*moderação/i,
   );
+});
+
+test("moderador suspenso recebe 403 direto e vê motivo escapado no perfil", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await login(page, baseURL, "moderador");
+  const cookie = (await page.context().cookies()).find(
+    (item) => item.name === "mv_session",
+  );
+  if (!cookie) throw new Error("Sessão de teste ausente.");
+  const payload = JSON.parse(
+    Buffer.from(cookie.value.split(".")[0] ?? "", "base64url").toString(),
+  ) as { uid: string };
+  const admin = await browser.newPage({ baseURL });
+  const reason = 'Conduta reiterada <img src=x onerror="alert(1)">';
+  try {
+    await login(admin, baseURL, "admin");
+    const result = await admin.request.post(
+      "/_actions/moderacao.definirSuspensao",
+      {
+        headers: await sessionHeaders(admin, baseURL),
+        form: { id: payload.uid, suspended: "true", reason },
+      },
+    );
+    expect(
+      result.ok(),
+      `${result.status()} ${await result.text()}`,
+    ).toBeTruthy();
+    const denied = await page.request.post(
+      "/_actions/moderacao.definirEscritaFechada",
+      {
+        headers: await sessionHeaders(page, baseURL),
+        form: { closed: "true", reason: "Tentativa proibida" },
+      },
+    );
+    expect(denied.status()).toBe(403);
+    await page.goto("/perfil");
+    await expect(
+      page.getByRole("heading", { name: "Sua conta está suspensa" }),
+    ).toBeVisible();
+    await expect(page.getByText(reason, { exact: true })).toBeVisible();
+    await expect(page.locator('img[src="x"]')).toHaveCount(0);
+  } finally {
+    await admin.close();
+  }
 });
