@@ -1,15 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-// Backlog visível da fatia F5 (Jogos), critério de aceite: docs/01:51 e docs/02.
-test.describe.fixme("F5: Jogos", () => {
+// Critério de aceite: docs/01:51 e docs/02.
+test.describe("F5: Jogos", () => {
   test("agendado: mostra horário em BRT, adversário e local", async ({
     page,
   }) => {
     // Seed: jogo com kickoff_at confirmado, casa, local preenchido.
     await page.goto("/jogos/vasco-x-adversario-seed");
-    await expect(
-      page.getByText(/\d{2}\/\d{2}, \d{2}h\d{2} \(Brasília\)/),
-    ).toBeVisible();
+    // "Última atualização" usa o mesmo formato de data — escopado ao parágrafo de horário para
+    // não colidir com ele (getByText casaria com os dois).
+    await expect(page.getByTestId("horario")).toHaveText(
+      /\d{2}\/\d{2}, \d{2}h\d{2} \(Brasília\)/,
+    );
     await expect(page.getByText("Adversário Seed")).toBeVisible();
   });
 
@@ -65,5 +67,24 @@ test.describe.fixme("F5: Jogos", () => {
     const box = await cta.boundingBox();
     if (!box) throw new Error("CTA 'Comentar' não está visível");
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  });
+
+  test("agenda (/jogos) separa próximos jogos de resultados, cada um levando à sua página", async ({
+    page,
+  }) => {
+    await page.goto("/jogos");
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Próximos jogos" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Resultados" }),
+    ).toBeVisible();
+
+    const proximo = page
+      .getByRole("link")
+      .filter({ hasText: "Adversário Seed" })
+      .first();
+    await proximo.click();
+    await expect(page).toHaveURL(/\/jogos\/vasco-x-adversario-seed$/);
   });
 });
