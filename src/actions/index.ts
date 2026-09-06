@@ -1,8 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "zod";
 
-import { getDb } from "@/lib/db/client";
-import { getEnv } from "@/lib/env";
+import { getRequestDb } from "@/lib/db/client";
 import {
   DuplicateLeadError,
   HoneypotTrippedError,
@@ -20,21 +19,19 @@ export const server = {
     cadastrar: defineAction({
       accept: "form",
       handler: async (formData, context) => {
-        if (!(formData instanceof FormData)) {
-          throw new ActionError({
-            code: "BAD_REQUEST",
-            message: "Formulário inválido.",
-          });
-        }
-
         // O widget do Turnstile grava o token num campo próprio (`cf-turnstile-response`), não
         // num nome que o schema Zod escolheria — por isso o parsing manual em vez de deixar o
         // Astro casar FormData com o schema pelo nome de cada chave.
+        //
+        // honeypot só vira string aqui: um bot que submete esse campo como parte de arquivo
+        // (FormData.get devolve um File, não null) não pode fazer a validação falhar de um jeito
+        // que revele a armadilha — o objetivo é sempre cair no sucesso fingido do serviço.
+        const honeypotValue = formData.get("honeypot");
         const raw = {
           value: formData.get("value"),
           sourcePage: formData.get("sourcePage"),
           consent: formData.get("consent") === "on",
-          honeypot: formData.get("honeypot") ?? "",
+          honeypot: typeof honeypotValue === "string" ? honeypotValue : "",
           turnstileToken: formData.get("cf-turnstile-response") ?? "",
         };
 
@@ -46,7 +43,7 @@ export const server = {
           });
         }
 
-        const db = getDb(getEnv().DB);
+        const db = getRequestDb();
         const ip = context.clientAddress || "0.0.0.0";
 
         try {

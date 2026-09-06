@@ -74,14 +74,16 @@ export async function registerLead(
 ): Promise<Lead> {
   if (input.honeypot) throw new HoneypotTrippedError();
 
-  if (!(await verifyTurnstileToken(input.turnstileToken, ip))) {
-    throw new TurnstileFailedError();
-  }
-
+  // Checa o limite (consulta local ao D1) antes do Turnstile (chamada de rede à Cloudflare): um
+  // IP já bloqueado não precisa pagar o round-trip externo mais caro para descobrir isso.
   const ipHash = await sha256Hex(ip);
   const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
   const recent = await countRecentByIpHash(db, ipHash, since);
   if (recent >= RATE_LIMIT_MAX_PER_IP) throw new RateLimitedError();
+
+  if (!(await verifyTurnstileToken(input.turnstileToken, ip))) {
+    throw new TurnstileFailedError();
+  }
 
   return createLead(db, {
     channel: detectLeadChannel(input.value),

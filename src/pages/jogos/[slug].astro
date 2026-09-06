@@ -1,38 +1,39 @@
 ---
-import { getDb } from "@/lib/db/client";
-import { getEnv } from "@/lib/env";
+import { getRequestDb } from "@/lib/db/client";
+import { MATCH_STATUS_LABEL } from "@/lib/match-status-label";
 import { formatBRT } from "@/lib/time/brt";
 import { findMatchBySlug } from "@/modules/partidas";
 import Base from "../../layouts/Base.astro";
 
 const { slug } = Astro.params;
-const db = getDb(getEnv().DB);
+const db = getRequestDb();
 const match = slug ? await findMatchBySlug(db, slug) : null;
 
 if (!match) {
   return Astro.rewrite("/404");
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  adiado: "Adiado",
-  cancelado: "Cancelado",
+const LOCAL_TEXT: Record<"casa" | "fora" | "neutro", string> = {
+  casa: "em casa",
+  fora: "fora de casa",
+  neutro: "em campo neutro",
 };
 ---
 
 <Base
   title={`Vasco x ${match.opponentName} — Meu Vascão`}
-  description={`${match.competition}: Vasco ${match.homeAway === "fora" ? "fora de casa" : "em casa"} contra ${match.opponentName}.`}
+  description={`${match.competition}: Vasco ${LOCAL_TEXT[match.homeAway]} contra ${match.opponentName}.`}
   active="jogos"
 >
   <article class="jogo">
     <p class="competicao">{match.competition}</p>
     <h1>
-      Vasco {match.homeAway === "fora" ? "×" : "x"}
+      Vasco {match.homeAway === "casa" ? "x" : "×"}
       {match.opponentName}
     </h1>
     {
-      match.status in STATUS_LABEL && (
-        <p class="status">{STATUS_LABEL[match.status]}</p>
+      MATCH_STATUS_LABEL[match.status] && (
+        <p class="status">{MATCH_STATUS_LABEL[match.status]}</p>
       )
     }
     <p class="horario">

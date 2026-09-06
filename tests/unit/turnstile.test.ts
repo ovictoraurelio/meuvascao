@@ -15,6 +15,7 @@ import { getTurnstileSiteKey, verifyTurnstileToken } from "@/lib/turnstile";
 
 describe("getTurnstileSiteKey", () => {
   beforeEach(() => {
+    bindings.ENVIRONMENT = "development";
     bindings.TURNSTILE_SITE_KEY = undefined;
   });
 
@@ -26,10 +27,23 @@ describe("getTurnstileSiteKey", () => {
     bindings.TURNSTILE_SITE_KEY = "chave-real-do-fundador";
     expect(getTurnstileSiteKey()).toBe("chave-real-do-fundador");
   });
+
+  it("acusa em produção se a chave de teste for usada por falta de configuração", () => {
+    bindings.ENVIRONMENT = "production";
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    expect(getTurnstileSiteKey()).toBe("1x00000000000000000000AA");
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("TURNSTILE_SITE_KEY"),
+    );
+    errorSpy.mockRestore();
+  });
 });
 
 describe("verifyTurnstileToken", () => {
   beforeEach(() => {
+    bindings.ENVIRONMENT = "development";
     bindings.TURNSTILE_SECRET_KEY = undefined;
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -57,6 +71,11 @@ describe("verifyTurnstileToken", () => {
   it("retorna falso quando a chamada à Cloudflare falha", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("", { status: 500 }));
     expect(await verifyTurnstileToken("qualquer-token")).toBe(false);
+  });
+
+  it("retorna falso (não lança) quando a chamada de rede falha, não só quando a resposta é ruim", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("network down"));
+    await expect(verifyTurnstileToken("qualquer-token")).resolves.toBe(false);
   });
 
   it("envia o secret, o token e o IP como corpo do POST", async () => {

@@ -1,4 +1,8 @@
 ---
+import {
+  MATCH_STATUS_LABEL,
+  type MatchStatusValue,
+} from "@/lib/match-status-label";
 import { formatBRT } from "@/lib/time/brt";
 
 // Forma estrutural, não importada de @/modules/partidas: componentes de apresentação não
@@ -11,7 +15,7 @@ interface ProximoJogo {
   kickoffAt: Date | null;
   kickoffPrecision: "confirmado" | "indefinido";
   venue: string | null;
-  status: "agendado" | "adiado" | "indefinido" | "encerrado" | "cancelado";
+  status: MatchStatusValue;
 }
 
 interface Props {
@@ -19,14 +23,6 @@ interface Props {
 }
 
 const { match } = Astro.props;
-
-const STATUS_LABEL: Record<string, string> = {
-  agendado: "",
-  adiado: "Adiado",
-  indefinido: "",
-  encerrado: "Encerrado",
-  cancelado: "Cancelado",
-};
 ---
 
 <section class="cartao" data-testid="dia-de-vasco" aria-label="Dia de Vasco">
@@ -35,11 +31,12 @@ const STATUS_LABEL: Record<string, string> = {
     match ? (
       <>
         <p class="adversario">
-          Vasco {match.homeAway === "fora" ? "×" : "x"} {match.opponentName}
+          Vasco {match.homeAway === "casa" ? "x" : "×"} {match.opponentName}
         </p>
         <p class="detalhes">
           {match.competition}
-          {match.status !== "agendado" && ` · ${STATUS_LABEL[match.status]}`}
+          {MATCH_STATUS_LABEL[match.status] &&
+            ` · ${MATCH_STATUS_LABEL[match.status]}`}
         </p>
         <p class="horario">
           {match.kickoffPrecision === "confirmado" && match.kickoffAt

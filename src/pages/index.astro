@@ -1,8 +1,7 @@
 ---
 import { actions } from "astro:actions";
 
-import { getDb } from "@/lib/db/client";
-import { getEnv } from "@/lib/env";
+import { getRequestDb } from "@/lib/db/client";
 import { getTurnstileSiteKey } from "@/lib/turnstile";
 import { listPublishedBySlot } from "@/modules/curadoria";
 import { findNextMatch } from "@/modules/partidas";
@@ -10,7 +9,7 @@ import CartaoProximoJogo from "../components/partidas/CartaoProximoJogo.astro";
 import ListaLinks from "../components/curadoria/ListaLinks.astro";
 import Base from "../layouts/Base.astro";
 
-const db = getDb(getEnv().DB);
+const db = getRequestDb();
 const [nextMatch, em1Minuto, ultimasNoticias] = await Promise.all([
   findNextMatch(db),
   listPublishedBySlot(db, "em1minuto"),

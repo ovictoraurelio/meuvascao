@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 
 import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import type { Database } from "@/lib/db/client";
@@ -65,6 +65,12 @@ export async function countRecentByIpHash(
   const [row] = await db
     .select({ total: sql<number>`count(*)` })
     .from(leads)
-    .where(and(eq(leads.ipHash, ipHash), gte(leads.createdAt, since)));
+    .where(
+      and(
+        eq(leads.ipHash, ipHash),
+        gte(leads.createdAt, since),
+        isNull(leads.deletedAt),
+      ),
+    );
   return row?.total ?? 0;
 }

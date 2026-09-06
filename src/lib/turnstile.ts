@@ -1,4 +1,4 @@
-import { getEnv } from "@/lib/env";
+import { getEnv, isProduction } from "@/lib/env";
 
 // Chaves de teste públicas da Cloudflare: sempre aprovam, documentadas para uso em dev/CI.
 // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
@@ -19,9 +19,21 @@ function turnstileEnv(): TurnstileEnv {
   return getEnv() as unknown as TurnstileEnv;
 }
 
+// Se `wrangler secret put` nunca rodou em produção (runbook do fundador, não deste agente), a
+// proteção antibot degrada em silêncio para "sempre aprova" — sem isto, nada acusaria o problema.
+function warnIfFallbackInProduction(secretName: string): void {
+  if (isProduction()) {
+    console.error(
+      `Turnstile: ${secretName} não configurado em produção — usando chave de teste (sempre aprova).`,
+    );
+  }
+}
+
 /** Chave pública para o widget no HTML. Vazia em .dev.vars → chave de teste (sempre aprova). */
 export function getTurnstileSiteKey(): string {
-  return turnstileEnv().TURNSTILE_SITE_KEY || TEST_SITE_KEY;
+  const configured = turnstileEnv().TURNSTILE_SITE_KEY;
+  if (!configured) warnIfFallbackInProduction("TURNSTILE_SITE_KEY");
+  return configured || TEST_SITE_KEY;
 }
 
 interface SiteverifyResponse {
@@ -34,12 +46,20 @@ export async function verifyTurnstileToken(
   remoteIp?: string,
 ): Promise<boolean> {
   if (!token) return false;
-  const secret = turnstileEnv().TURNSTILE_SECRET_KEY || TEST_SECRET_KEY;
+  const configuredSecret = turnstileEnv().TURNSTILE_SECRET_KEY;
+  if (!configuredSecret) warnIfFallbackInProduction("TURNSTILE_SECRET_KEY");
+  const secret = configuredSecret || TEST_SECRET_KEY;
   const body = new URLSearchParams({ secret, response: token });
   if (remoteIp) body.set("remoteip", remoteIp);
 
-  const res = await fetch(VERIFY_URL, { method: "POST", body });
-  if (!res.ok) return false;
-  const data = (await res.json()) as SiteverifyResponse;
-  return data.success === true;
+  try {
+    const res = await fetch(VERIFY_URL, { method: "POST", body });
+    if (!res.ok) return false;
+    const data = (await res.json()) as SiteverifyResponse;
+    return data.success === true;
+  } catch {
+    // Falha de rede ao chamar a Cloudflare (DNS, timeout, indisponibilidade): trata como
+    // verificação reprovada em vez de deixar o erro vazar para o usuário como 500 genérico.
+    return false;
+  }
 }
