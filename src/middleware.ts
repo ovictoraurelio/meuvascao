@@ -10,7 +10,7 @@ import {
  * Cabeçalhos de segurança e regras por ambiente aplicados a toda resposta gerada pelo Worker.
  * Assets estáticos são servidos antes do Worker e não passam por aqui; para eles valem
  * `public/_headers` (fatia F12) e a meta robots nas páginas.
- * A CSP completa entra na fatia F12; aqui ficam os cabeçalhos que não dependem de nonce.
+ * CSP de produção permite apenas recursos próprios e o desafio Turnstile.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   // Em produção a Cloudflare já identifica a requisição pelo cf-ray; localmente geramos um.
@@ -37,6 +37,39 @@ export const onRequest = defineMiddleware(async (context, next) => {
     "camera=(), microphone=(), geolocation=(), payment=()",
   );
   headers.set("X-Request-Id", context.locals.requestId);
+
+  const privateRoute =
+    /^\/(?:admin|perfil|conta|entrar|auth|dev)(?:\/|$)/.test(
+      context.url.pathname,
+    ) || context.url.pathname === "/api/me";
+  if (
+    privateRoute ||
+    context.locals.session ||
+    context.request.method !== "GET"
+  ) {
+    headers.set("Cache-Control", "private, no-store");
+  }
+  if (privateRoute) headers.set("X-Robots-Tag", "noindex, nofollow");
+
+  if (isProduction()) {
+    headers.set("Strict-Transport-Security", "max-age=31536000");
+    headers.set(
+      "Content-Security-Policy",
+      [
+        "default-src 'self'",
+        "script-src 'self' https://challenges.cloudflare.com",
+        "style-src 'self'",
+        "font-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self' https://challenges.cloudflare.com",
+        "frame-src https://challenges.cloudflare.com",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join("; "),
+    );
+  }
 
   // Fora de produção (desenvolvimento e preview) nada pode ser indexado.
   if (!isProduction()) {
