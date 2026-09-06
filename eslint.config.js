@@ -53,7 +53,7 @@ export default defineConfig([
   {
     // Ferramentas, configurações e testes de Node.
     files: [
-      "scripts/**/*.{js,mjs}",
+      "scripts/**/*.{js,mjs,ts}",
       "*.config.{js,mjs,ts}",
       "tests/unit/**/*.ts",
       "tests/e2e/**/*.ts",

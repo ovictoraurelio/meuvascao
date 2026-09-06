@@ -2,3 +2,6 @@
 package-lock.json
 migrations/
 prototype/
+# Gerado por scripts/build-tokens.ts; o formato é o que o gerador produz, não o que o Prettier
+# preferiria (ele quebra linhas longas de custom property de um jeito que o gerador não replica).
+src/styles/tokens.css

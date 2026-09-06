@@ -1,0 +1,49 @@
+---
+import { type NavKey } from "@/lib/nav";
+import Base from "./Base.astro";
+
+// Miolo compartilhado por toda página que hoje só tem um estado vazio ou de erro para mostrar
+// (home no F0/F1, os stubs de /jogos, /resenha, /perfil até suas fatias chegarem, e 404/500).
+// Cada fatia que implementa a página de verdade substitui o arquivo inteiro — este componente não
+// precisa saber disso, só evita repetir a mesma marcação cinco vezes enquanto isso não acontece.
+interface Props {
+  title: string;
+  description: string;
+  active?: NavKey;
+  heading: string;
+  message: string;
+  centered?: boolean;
+}
+
+const {
+  title,
+  description,
+  active,
+  heading,
+  message,
+  centered = false,
+} = Astro.props;
+---
+
+<Base title={title} description={description} active={active}>
+  <div class:list={["estado", { centralizado: centered }]}>
+    <h1>{heading}</h1>
+    <p>{message}</p>
+    <slot />
+  </div>
+</Base>
+
+<style>
+  .estado {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .estado.centralizado {
+    align-items: center;
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+  }
+</style>

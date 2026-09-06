@@ -1,37 +1,20 @@
 ---
-// Esqueleto da fatia F0. Layout, tokens e barra inferior entram na fatia F2.
 import { getEnv } from "@/lib/env";
+import EstadoVazio from "../layouts/EstadoVazio.astro";
 
 const { ENVIRONMENT } = getEnv();
-const indexable = ENVIRONMENT === "production";
 ---
 
-<!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Meu Vascão</title>
-    <meta
-      name="description"
-      content="Portal independente de torcedores do Vasco: dia de jogo, resenha e links curados."
-    />
-    {!indexable && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  </head>
-  <body>
-    <main>
-      <h1>Meu Vascão</h1>
-      <p>
-        Portal independente, feito por torcedores, sem vínculo oficial com o
-        Club de Regatas Vasco da Gama.
-      </p>
-      <p>Em construção. Ainda não há jogos, notícias ou resenha cadastrados.</p>
-      {
-        !indexable && (
-          <p>Ambiente: {ENVIRONMENT}. Esta página não é indexada.</p>
-        )
-      }
-    </main>
-  </body>
-</html>
+<EstadoVazio
+  title="Meu Vascão"
+  description="Portal independente de torcedores do Vasco: dia de jogo, resenha e links curados."
+  active="inicio"
+  heading="Meu Vascão"
+  message="Em construção. Ainda não há jogos, notícias ou resenha cadastrados."
+>
+  {
+    ENVIRONMENT !== "production" && (
+      <p>Ambiente: {ENVIRONMENT}. Esta página não é indexada.</p>
+    )
+  }
+</EstadoVazio>
