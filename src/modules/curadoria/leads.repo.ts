@@ -1,3 +1,5 @@
+import { and, eq, gte, sql } from "drizzle-orm";
+
 import { assertReturningRow, isUniqueConstraintError } from "@/lib/db/errors";
 import type { Database } from "@/lib/db/client";
 import { leads } from "@/lib/db/schema";
@@ -52,4 +54,17 @@ export async function createLead(
       throw new DuplicateLeadError(valueNormalized);
     throw error;
   }
+}
+
+/** Quantos leads o mesmo IP (hash) cadastrou desde `since` — camada 2 de rate limit (docs/03). */
+export async function countRecentByIpHash(
+  db: Database,
+  ipHash: string,
+  since: Date,
+): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`count(*)` })
+    .from(leads)
+    .where(and(eq(leads.ipHash, ipHash), gte(leads.createdAt, since)));
+  return row?.total ?? 0;
 }
